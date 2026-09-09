@@ -14,6 +14,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <DHT.h>
 #include <ArduinoJson.h>
 
@@ -193,7 +194,8 @@ void sendCloudTelemetry(float temp, float humidity, int smoke, bool flame,
         return;
     }
 
-    WiFiClient client;
+    WiFiClientSecure client;
+    client.setInsecure(); // Skip SSL certificate verification for webhook.site
     HTTPClient http;
 
     Serial.print(F("[CLOUD] Initiating HTTP POST to: "));
