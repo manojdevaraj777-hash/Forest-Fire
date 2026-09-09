@@ -25,7 +25,7 @@
 // ==========================================
 // ALERT THRESHOLDS
 // ==========================================
-#define TEMP_THRESHOLD_HIGH_C     45.0f   // Alert if Temperature exceeds 45°C
+#define TEMP_THRESHOLD_HIGH_C     30.0f   // Alert threshold set to 30°C for testing live cloud telemetry
 #define HUMIDITY_THRESHOLD_LOW    20.0f   // Alert if Humidity drops below 20%
 #define SMOKE_THRESHOLD_ADC       400     // Alert if MQ-2 raw ADC value exceeds 400
 
