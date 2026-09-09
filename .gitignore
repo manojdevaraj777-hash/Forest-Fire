@@ -1,0 +1,21 @@
+# PlatformIO build & temporary output directories
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+
+# IDE specific configurations
+.vscode/.browse.c_cpp_properties.json
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Sensitive configuration files (if separated)
+include/config_secrets.h
