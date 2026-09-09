@@ -1,18 +1,8 @@
+#ifdef PLATFORMIO
+
 /**
  * @file main.cpp
- * @brief NodeMCU ESP8266 Forest Fire Detection System
- * 
- * Sensors:
- *  - DHT11 (Digital pin D2 / GPIO4): Temperature & Humidity
- *  - MQ-2 (Analog pin A0): Smoke / Combustible Gas Level
- *  - IR Flame Sensor (Digital pin D1 / GPIO5): Active LOW Flame Detector
- * 
- * Actuators:
- *  - Piezo Buzzer (Digital pin D5 / GPIO14): Sound Alarm
- *  - Red LED (Digital pin D6 / GPIO12): Visual Alarm
- * 
- * Cloud Telemetry:
- *  - Sends structured JSON telemetry via HTTP POST on alert conditions
+ * @brief NodeMCU ESP8266 Forest Fire Detection System (PlatformIO entry point)
  */
 
 #include <Arduino.h>
@@ -22,7 +12,7 @@
 #include <DHT.h>
 #include <ArduinoJson.h>
 
-#include "config.h"
+#include "include/config.h"
 
 // ==========================================
 // GLOBALS & OBJECT INITIALIZATION
@@ -266,3 +256,5 @@ void sendCloudTelemetry(float temp, float humidity, int smoke, bool flame,
         Serial.println(F("[CLOUD] Unable to connect to cloud endpoint."));
     }
 }
+
+#endif // PLATFORMIO
