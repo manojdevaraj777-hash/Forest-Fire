@@ -39,7 +39,7 @@
 #define WIFI_PASSWORD           "MANOJ2004"
 
 // Cloud HTTP POST endpoint URL (AWS API Gateway, Azure HTTP function, or custom Webhook)
-#define CLOUD_API_ENDPOINT      "https://webhook.site/YOUR_WEBHOOK_GUID_HERE"
+#define CLOUD_API_ENDPOINT      "https://webhook.site/7a485784-dd5e-4ec7-9fb3-91e535946e42"
 
 // Optional API Authorization key header (leave empty if not required)
 #define CLOUD_API_KEY           "YOUR_API_KEY_HERE"
