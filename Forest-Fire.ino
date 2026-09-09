@@ -223,8 +223,17 @@ void sendCloudTelemetry(float temp, float humidity, int smoke, bool flame,
 
         // Sensor Readings
         JsonObject readings = doc["sensor_readings"].to<JsonObject>();
-        readings["temperature_c"] = isnan(temp) ? nullptr : doc.createNestedValue(temp);
-        readings["humidity_percent"] = isnan(humidity) ? nullptr : doc.createNestedValue(humidity);
+        if (isnan(temp)) {
+            readings["temperature_c"] = nullptr;
+        } else {
+            readings["temperature_c"] = temp;
+        }
+
+        if (isnan(humidity)) {
+            readings["humidity_percent"] = nullptr;
+        } else {
+            readings["humidity_percent"] = humidity;
+        }
         readings["smoke_adc"] = smoke;
         readings["flame_detected"] = flame;
 
