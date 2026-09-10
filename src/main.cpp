@@ -134,7 +134,7 @@ void connectWiFi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    while (WiFi.status() != WL_CONNECTED && attempts < 60) {
         delay(500);
         Serial.print(F("."));
         attempts++;
@@ -164,6 +164,9 @@ void setupOTA() {
     });
     ArduinoOTA.onEnd([]() {
         Serial.println(F("[OTA] Update complete! Rebooting..."));
+    });
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        Serial.printf("[OTA] Progress: %u%%\r", (progress * 100) / total);
     });
     ArduinoOTA.onError([](ota_error_t error) {
         Serial.printf("[OTA] Error[%u]: ", error);
@@ -382,9 +385,9 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
     triggers["flame_detected"]    = isFlameAlert;
 
     JsonObject readings = doc["sensor_readings"].to<JsonObject>();
-    readings["temperature_c"]    = isnan(temp)      ? nullptr : (JsonVariant)temp;
-    readings["humidity_percent"] = isnan(humidity)  ? nullptr : (JsonVariant)humidity;
-    readings["heat_index_c"]     = isnan(heatIndex) ? nullptr : (JsonVariant)heatIndex;
+    if (isnan(temp))      { readings["temperature_c"]    = nullptr; } else { readings["temperature_c"]    = temp; }
+    if (isnan(humidity))  { readings["humidity_percent"] = nullptr; } else { readings["humidity_percent"] = humidity; }
+    if (isnan(heatIndex)) { readings["heat_index_c"]     = nullptr; } else { readings["heat_index_c"]     = heatIndex; }
     readings["smoke_adc"]        = smoke;
     readings["flame_detected"]   = flame;
 
