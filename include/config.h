@@ -42,7 +42,9 @@
 #include "config_secrets.h"
 
 // Cloud HTTP POST endpoint
-#define CLOUD_API_ENDPOINT      "https://webhook.site/7a485784-dd5e-4ec7-9fb3-91e535946e42"
+// Local Flask backend (run: python backend/app.py on your PC)
+// Change the IP to match this computer's LAN IP (check with: ipconfig)
+#define CLOUD_API_ENDPOINT      "http://10.178.186.92:5000/api/reading"
 
 // Device Identifier
 #define DEVICE_ID               "nodemcu_forest_node_01"

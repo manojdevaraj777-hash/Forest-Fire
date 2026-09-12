@@ -328,13 +328,8 @@ void manageLEDBlink() {
     unsigned long currentMillis = millis();
 
     if (!currentAlertActive) {
-        // Heartbeat pulse: single short blink every 5 seconds = "I'm alive"
-        if (currentMillis - lastHeartbeatBlink >= LED_HEARTBEAT_MS) {
-            lastHeartbeatBlink = currentMillis;
-            digitalWrite(LED_PIN, HIGH);
-            delay(50); // Short 50ms pulse
-            digitalWrite(LED_PIN, LOW);
-        }
+        // LED stays OFF when environment is normal
+        digitalWrite(LED_PIN, LOW);
         return;
     }
 
@@ -445,10 +440,18 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
 
     // Retry loop (up to HTTP_RETRY_COUNT attempts)
     bool success = false;
+    bool useTLS = String(CLOUD_API_ENDPOINT).startsWith("https://");
+
     for (int attempt = 1; attempt <= HTTP_RETRY_COUNT; attempt++) {
-        WiFiClientSecure client;
-        client.setInsecure(); // Skip cert check — swap with setCACert() for production
+        WiFiClient plainClient;
+        WiFiClientSecure secureClient;
         HTTPClient http;
+
+        // Plain HTTP for local endpoints, TLS for https:// endpoints
+        if (useTLS) {
+            secureClient.setInsecure(); // Skip cert check — swap with setCACert() for production
+        }
+        WiFiClient& client = useTLS ? (WiFiClient&)secureClient : (WiFiClient&)plainClient;
 
         if (http.begin(client, CLOUD_API_ENDPOINT)) {
             http.addHeader(F("Content-Type"), F("application/json"));

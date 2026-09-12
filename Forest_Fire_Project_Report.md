@@ -1,4 +1,4 @@
-# 🔥 Forest Fire Detection System
+  # 🔥 Forest Fire Detection System
 ## Project Documentation Report
 
 > **Author:** Manoj  
