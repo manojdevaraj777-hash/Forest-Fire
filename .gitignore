@@ -19,3 +19,5 @@ desktop.ini
 
 # Sensitive configuration files (if separated)
 include/config_secrets.h
+backend/pushbullet_config.json
+backend/forest_fire.db
