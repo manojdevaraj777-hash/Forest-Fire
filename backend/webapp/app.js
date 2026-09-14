@@ -224,6 +224,8 @@ $("#ai-analyze").addEventListener("click", async () => {
 });
 
 /* ===== POLLING ===== */
+/* Keep Render awake (free tier sleeps after 15 min idle) */
+setInterval(() => { fetch('/api/readings').catch(() => {}); }, 9 * 60 * 1000); // every 9 min
 setInterval(fetchReadings, POLL_MS);
 setInterval(fetchAlerts, 15000);
 fetchReadings(); fetchAlerts();

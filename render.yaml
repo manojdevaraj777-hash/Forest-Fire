@@ -10,3 +10,12 @@ services:
     autoDeploy: true
     trunkBranch: main
     buildTimeout: 120
+    healthCheckPath: /api/readings
+    autoAssignDomain: true
+    envVars:
+      - key: GEMINI_API_KEY
+        fromGitProvider: true
+      - key: PUSHBULLET_TOKEN
+    cronJobs:
+      - schedule: "*/14 * * * *"
+        command: "curl -s https://forest-fire-0b5x.onrender.com/api/readings > /dev/null"
