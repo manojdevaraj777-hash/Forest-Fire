@@ -25,3 +25,7 @@ backend/forest_fire.db
 
 # Web app build artifacts
 backend/webapp/*.map
+
+# Flask server logs
+server.log
+server.err.log
