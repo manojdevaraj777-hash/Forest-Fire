@@ -3,9 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Forest Fire Command Center</title>
+    <title>ForestFire — Save Our Forest</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -16,28 +17,29 @@
         <!-- NAVBAR -->
         <nav class="navbar">
             <div class="nav-brand">
-                <div class="flame-logo"></div>
-                <span class="nav-title">ForestFire</span>
-                <span class="nav-tag">Save Our Forest</span>
+                <div class="pine-logo"></div>
+                <div class="nav-text">
+                    <span class="nav-title">ForestFire</span>
+                    <span class="nav-tag">Save Our Forest</span>
+                </div>
             </div>
             <div class="nav-links">
-                <button class="nav-btn active" data-section="dashboard"><i data-lucide="home" class="nav-icon-sm"></i> Home</button>
-                <button class="nav-btn" data-section="trends"><i data-lucide="chart-line" class="nav-icon-sm"></i> Trends</button>
-                <button class="nav-btn" data-section="alerts"><i data-lucide="alert-circle" class="nav-icon-sm"></i> Alerts <span class="alert-count-badge" id="nav-alert-badge">0</span></button>
-                <button class="nav-btn" data-section="ai"><i data-lucide="brain" class="nav-icon-sm"></i> AI</button>
-                <button class="nav-btn" data-section="hardware"><i data-lucide="cpu" class="nav-icon-sm"></i> Hardware</button>
+                <button class="nav-btn active" data-section="dashboard"><i class="fas fa-home"></i> Home</button>
+                <button class="nav-btn" data-section="trends"><i class="fas fa-chart-line"></i> Trends</button>
+                <button class="nav-btn" data-section="alerts"><i class="fas fa-bell"></i> Alerts <span class="nav-badge" id="nav-badge">0</span></button>
+                <button class="nav-btn" data-section="ai"><i class="fas fa-brain"></i> AI</button>
+                <button class="nav-btn" data-section="hardware"><i class="fas fa-microchip"></i> Hardware</button>
             </div>
-            <div class="nav-right">
-                <i data-lucide="search" class="nav-icon-sm"></i>
-                <i data-lucide="bell" class="nav-icon-sm"></i>
-                <i data-lucide="settings" class="nav-icon-sm"></i>
+            <div class="nav-monitoring">
+                <span class="monitor-dot"></span>
+                <span>Monitoring</span>
             </div>
         </nav>
 
         <!-- ALERT BANNER -->
         <div class="alert-banner" id="alert-banner" style="display:none;">
             <div class="alert-banner-content">
-                <i data-lucide="flame" class="alert-icon"></i>
+                <span class="alert-icon">🔥</span>
                 <span id="alert-banner-text">ALERT ACTIVE!</span>
                 <button class="alert-dismiss" id="alert-dismiss">&times;</button>
             </div>
@@ -51,13 +53,14 @@
                 <!-- Hero -->
                 <div class="hero">
                     <div class="hero-content">
-                        <div class="hero-badge"><i data-lucide="shield-check"></i> SYSTEM ACTIVE</div>
-                        <h1>Protect the Forest</h1>
-                        <p class="hero-sub">24/7 autonomous forest fire detection. Monitoring temperature, humidity, smoke, and flame threats in real-time. Every reading saves a tree.</p>
+                        <div class="hero-badge"><i class="fas fa-tree"></i> SYSTEM ACTIVE</div>
+                        <h1>Save Our Forest</h1>
+                        <p class="hero-sub">Every degree matters. Every tree counts. This system monitors forest conditions 24/7 to detect fire threats before they spread.</p>
                         <div class="hero-stats">
-                            <div class="hero-stat"><span class="hero-stat-num green" id="stat-readings">0</span><span>Readings</span></div>
-                            <div class="hero-stat"><span class="hero-stat-num red" id="stat-alerts">0</span><span>Alerts</span></div>
-                            <div class="hero-stat"><span class="hero-stat-num blue">24/7</span><span>Uptime</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num" id="stat-readings">0</span><span>Readings</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num" id="stat-alerts">0</span><span>Alerts</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num">24/7</span><span>Monitoring</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num" id="stat-trees">0</span><span>Trees Protected</span></div>
                         </div>
                     </div>
                     <div class="hero-visual">
@@ -66,80 +69,59 @@
                             <div class="tree tree-2"></div>
                             <div class="tree tree-3"></div>
                         </div>
-                        <div class="fire-pulse" id="fire-pulse"></div>
+                        <div class="fire-glow-dot"></div>
                     </div>
                 </div>
 
-                <!-- Bento-box Sensor Grid -->
+                <!-- LIVE READINGS -->
+                <div class="readings-label"><i class="fas fa-chart-line"></i> Live Readings</div>
                 <div class="sensor-grid">
                     <div class="sensor-card glass" id="card-temp">
-                        <div class="sensor-card-header">
-                            <i data-lucide="thermometer" class="sensor-icon" style="color:#ff6b35"></i>
-                            <span class="sensor-label">Temperature</span>
-                        </div>
+                        <div class="sensor-icon-wrap"><i class="fas fa-thermometer-half sensor-icon-glow" style="color:#ff6b35"></i></div>
+                        <div class="sensor-label">Temperature</div>
                         <div class="sensor-value" id="val-temp">—</div>
                         <div class="sensor-unit">°C</div>
                         <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-temp"></div></div>
                         <div class="sensor-status" id="st-temp">—</div>
                     </div>
                     <div class="sensor-card glass" id="card-hum">
-                        <div class="sensor-card-header">
-                            <i data-lucide="droplets" class="sensor-icon" style="color:#4a8c3f"></i>
-                            <span class="sensor-label">Humidity</span>
-                        </div>
+                        <div class="sensor-icon-wrap"><i class="fas fa-droplet sensor-icon-glow" style="color:#4a8c3f"></i></div>
+                        <div class="sensor-label">Humidity</div>
                         <div class="sensor-value" id="val-hum">—</div>
                         <div class="sensor-unit">%</div>
                         <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-hum"></div></div>
                         <div class="sensor-status" id="st-hum">—</div>
                     </div>
                     <div class="sensor-card glass" id="card-smoke">
-                        <div class="sensor-card-header">
-                            <i data-lucide="cloud" class="sensor-icon" style="color:#ff9f1c"></i>
-                            <span class="sensor-label">Smoke ADC</span>
-                        </div>
+                        <div class="sensor-icon-wrap"><i class="fas fa-smog sensor-icon-glow" style="color:#ff9f1c"></i></div>
+                        <div class="sensor-label">Smoke ADC</div>
                         <div class="sensor-value" id="val-smoke">—</div>
                         <div class="sensor-unit">/1024</div>
                         <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-smoke"></div></div>
                         <div class="sensor-status" id="st-smoke">—</div>
                     </div>
                     <div class="sensor-card glass" id="card-heat">
-                        <div class="sensor-card-header">
-                            <i data-lucide="sun" class="sensor-icon" style="color:#e63946"></i>
-                            <span class="sensor-label">Heat Index</span>
-                        </div>
+                        <div class="sensor-icon-wrap"><i class="fas fa-sun sensor-icon-glow" style="color:#e63946"></i></div>
+                        <div class="sensor-label">Heat Index</div>
                         <div class="sensor-value" id="val-heat">—</div>
                         <div class="sensor-unit">°C</div>
                         <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-heat"></div></div>
                         <div class="sensor-status" id="st-heat">—</div>
                     </div>
                     <div class="sensor-card glass" id="card-flame">
-                        <div class="sensor-card-header">
-                            <i data-lucide="flame" class="sensor-icon" style="color:#ff4444"></i>
-                            <span class="sensor-label">Flame</span>
-                        </div>
+                        <div class="sensor-icon-wrap"><i class="fas fa-fire sensor-icon-glow" style="color:#ff4444"></i></div>
+                        <div class="sensor-label">Flame</div>
                         <div class="sensor-value" id="val-flame">—</div>
                         <div class="sensor-unit">Active LOW</div>
                         <div class="sensor-status" id="st-flame">—</div>
                     </div>
                     <div class="sensor-card glass" id="card-wifi">
-                        <div class="sensor-card-header">
-                            <i data-lucide="wifi" class="sensor-icon" style="color:#8faa8a"></i>
-                            <span class="sensor-label">WiFi Signal</span>
-                        </div>
+                        <div class="sensor-icon-wrap"><i class="fas fa-wifi sensor-icon-glow" style="color:#8faa8a"></i></div>
+                        <div class="sensor-label">WiFi Signal</div>
                         <div class="sensor-value" id="val-rssi">—</div>
                         <div class="sensor-unit">dBm</div>
                         <div class="sensor-status" id="st-rssi">—</div>
                     </div>
-                </div>
-
-                <!-- Forest Health Meter -->
-                <div class="health-panel glass">
-                    <div class="health-panel-header">
-                        <i data-lucide="map-pin" class="health-icon"></i>
-                        <span>Forest Health Index</span>
-                    </div>
-                    <div class="health-bar-track"><div class="health-bar-fill" id="health-fill"></div></div>
-                    <div class="health-label" id="health-text">Calculating...</div>
                 </div>
             </section>
 
@@ -149,14 +131,14 @@
                     <h2>Sensor Trends</h2>
                 </div>
                 <div class="trend-tabs">
-                    <button class="trend-tab active" data-chart="temp-hum"><i data-lucide="thermometer" class="tab-icon"></i> Temp &amp; Humidity</button>
-                    <button class="trend-tab" data-chart="smoke"><i data-lucide="cloud" class="tab-icon"></i> Smoke ADC</button>
-                    <button class="trend-tab" data-chart="heat"><i data-lucide="sun" class="tab-icon"></i> Heat Index</button>
+                    <button class="trend-tab active" data-chart="temp-hum">Temp &amp; Humidity</button>
+                    <button class="trend-tab" data-chart="smoke">Smoke ADC</button>
+                    <button class="trend-tab" data-chart="heat">Heat Index</button>
                 </div>
                 <div class="charts">
-                    <div class="chart-card glass" id="chart-box-temp-hum"><h3>Temperature &amp; Humidity</h3><canvas id="chart-temp-hum"></canvas></div>
-                    <div class="chart-card glass" id="chart-box-smoke" style="display:none;"><h3>Smoke ADC</h3><canvas id="chart-smoke"></canvas></div>
-                    <div class="chart-card glass" id="chart-box-heat" style="display:none;"><h3>Heat Index</h3><canvas id="chart-heat"></canvas></div>
+                    <div class="chart-card glass" id="chart-box-temp-hum"><canvas id="chart-temp-hum"></canvas></div>
+                    <div class="chart-card glass" id="chart-box-smoke" style="display:none;"><canvas id="chart-smoke"></canvas></div>
+                    <div class="chart-card glass" id="chart-box-heat" style="display:none;"><canvas id="chart-heat"></canvas></div>
                 </div>
                 <div class="chart-info">
                     <span>Last <strong id="chart-count">20</strong> readings</span>
@@ -171,9 +153,7 @@
                     <span class="alert-count-badge" id="alert-count-badge">0</span>
                 </div>
                 <table class="alerts-table">
-                    <thead>
-                        <tr><th>#</th><th>Time</th><th>Type</th><th>Temp °C</th><th>Hum %</th><th>Smoke</th><th>Heat °C</th></tr>
-                    </thead>
+                    <thead><tr><th>#</th><th>Time</th><th>Type</th><th>Temp °C</th><th>Hum %</th><th>Smoke</th><th>Heat °C</th></tr></thead>
                     <tbody id="alert-tbody">
                         <tr><td colspan="7">No alerts yet</td></tr>
                     </tbody>
@@ -184,11 +164,27 @@
             <section class="section" id="sec-ai" style="display:none;">
                 <div class="ai-panel glass">
                     <div class="ai-header">
-                        <div><h3>AI Forest Analysis</h3><p class="ai-desc">Instant insights on fire risk based on real-time sensor data.</p></div>
+                        <div>
+                            <h3><i class="fas fa-brain"></i> AI Forest Analysis</h3>
+                            <p class="ai-desc">Instant insights on fire risk based on real-time sensor data.</p>
+                        </div>
                         <button id="ai-close">&times;</button>
                     </div>
-                    <button class="ai-analyze-btn" id="ai-analyze"><i data-lucide="sparkles"></i> Analyze Current Data</button>
+                    <button class="ai-analyze-btn" id="ai-analyze"><i class="fas fa-sparkles"></i> Analyze Current Data</button>
                     <div class="ai-result" id="ai-result"></div>
+                    <!-- Hotspot Map -->
+                    <div class="hotspot-map">
+                        <h4><i class="fas fa-map"></i> Hotspot Predictions</h4>
+                        <div class="map-container">
+                            <div class="map-topo">
+                                <div class="map-pin" style="top:30%;left:20%;" title="Zone A - Normal"></div>
+                                <div class="map-pin" style="top:50%;left:50%;" title="Zone B - Watch"></div>
+                                <div class="map-pin danger" style="top:25%;left:70%;" title="Zone C - DANGER"></div>
+                                <div class="map-pin" style="top:70%;left:35%;" title="Zone D - Normal"></div>
+                                <div class="map-pin" style="top:40%;left:80%;" title="Zone E - Watch"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -200,42 +196,57 @@
                 </div>
                 <div class="hardware-grid">
                     <div class="hw-card glass" id="hw-dht">
-                        <div class="hw-icon"><i data-lucide="thermometer"></i></div>
+                        <div class="hw-icon"><i class="fas fa-thermometer-half"></i></div>
                         <div class="hw-name">DHT11</div>
                         <div class="hw-pin">D2 / GPIO4</div>
                         <div class="hw-detail">Temp &amp; Humidity</div>
                         <div class="hw-status" id="hw-dht-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-mq2">
-                        <div class="hw-icon"><i data-lucide="cloud"></i></div>
+                        <div class="hw-icon"><i class="fas fa-smog"></i></div>
                         <div class="hw-name">MQ-2</div>
                         <div class="hw-pin">A0</div>
                         <div class="hw-detail">Smoke Detection</div>
                         <div class="hw-status" id="hw-mq2-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-flame">
-                        <div class="hw-icon"><i data-lucide="flame"></i></div>
+                        <div class="hw-icon"><i class="fas fa-fire"></i></div>
                         <div class="hw-name">IR Flame</div>
                         <div class="hw-pin">D1 / GPIO5</div>
                         <div class="hw-detail">Fire Detection</div>
                         <div class="hw-status" id="hw-flame-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-buzzer">
-                        <div class="hw-icon"><i data-lucide="volume-2"></i></div>
+                        <div class="hw-icon"><i class="fas fa-volume-up"></i></div>
                         <div class="hw-name">Buzzer</div>
                         <div class="hw-pin">D5 / GPIO14</div>
                         <div class="hw-detail">Alert Sound</div>
                         <div class="hw-status" id="hw-buzzer-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-led">
-                        <div class="hw-icon"><i data-lucide="led-vertical"></i></div>
+                        <div class="hw-icon"><i class="fas fa-lightbulb"></i></div>
                         <div class="hw-name">LED</div>
                         <div class="hw-pin">D6 / GPIO12</div>
                         <div class="hw-detail">Visual Alert</div>
                         <div class="hw-status" id="hw-led-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-wifi">
-                        <div class="hw-icon"><i data-lucide="wifi-off"></i></div>
+                        <div class="hw-icon"><i class="fas fa-wifi"></i></div>
+                        <div class="hw-name">WiFi</div>
+                        <div class="hw-pin">ESP8266</div>
+                        <div class="hw-detail">Network Conn.</div>
+                        <div class="hw-status" id="hw-wifi-status">—</div>
+                    </div>
+                </div>
+                    <div class="hw-card glass" id="hw-led">
+                        <div class="hw-icon"><i class="bx bx-led"></i></div>
+                        <div class="hw-name">LED</div>
+                        <div class="hw-pin">D6 / GPIO12</div>
+                        <div class="hw-detail">Visual Alert</div>
+                        <div class="hw-status" id="hw-led-status">—</div>
+                    </div>
+                    <div class="hw-card glass" id="hw-wifi">
+                        <div class="hw-icon"><i class="bx bx-wifi"></i></div>
                         <div class="hw-name">WiFi</div>
                         <div class="hw-pin">ESP8266</div>
                         <div class="hw-detail">Network Conn.</div>
@@ -247,10 +258,12 @@
         </main>
 
         <footer>
-            <p>Forest Fire Detection Command Center · Every Reading Saves a Tree</p>
+            <p><i class="fas fa-tree"></i> Forest Fire Detection System · Built to Protect Our Green Heritage · Every Reading Saves a Tree</p>
         </footer>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://unpkg.com/lucide@latest"></script>
 </body>
 </html>
