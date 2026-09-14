@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: forest-fire
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "python backend/app.py"
+    runtimePython: "3.12.3"
+    instanceType: "standard"
+    plan: "free"
+    envVars:
+      - key: GEMINI_API_KEY
+        fromSecret: gemini-api-key
+      - key: PUSHBULLET_TOKEN
+        fromSecret: pushbullet-token
+    autoDeploy: true
+    trunkBranch: main
+    buildTimeout: 120
