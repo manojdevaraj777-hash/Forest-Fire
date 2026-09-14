@@ -1,6 +1,22 @@
 const POLL_MS = 3000;
 const $ = (s) => document.querySelector(s);
 
+/* Serial Console */
+const consoleLines = [];
+function addConsoleLine(msg, type = 'system') {
+    const time = new Date().toLocaleTimeString();
+    const line = `[${time}] ${msg}`;
+    consoleLines.unshift({ text: line, type });
+    if (consoleLines.length > 50) consoleLines.pop();
+    const body = $("#console-body");
+    if (body) {
+        body.innerHTML = consoleLines.map(c =>
+            `<div class="console-line ${c.type}">${escHtml(c.text)}</div>`
+        ).join('');
+    }
+}
+function escHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
 /* ===== EMBER PARTICLES ===== */
 function createEmbers() {
     const layer = $("#ember-layer");
@@ -187,6 +203,30 @@ async function fetchReadings() {
         else if (health > 40) { $("#health-fill").style.background = "linear-gradient(90deg, var(--fire-glow), var(--fire-orange))"; $("#health-text").textContent = "⚠ At Risk"; }
         else { $("#health-fill").style.background = "linear-gradient(90deg, var(--fire-red), #ff4422)"; $("#health-text").textContent = "🔴 Critical"; }
 
+        /* Serial Console Messages */
+        const t = r.temperature_c != null ? r.temperature_c.toFixed(1) : '?';
+        const h = r.humidity_percent != null ? r.humidity_percent.toFixed(1) : '?';
+        const hi = r.heat_index_c != null ? r.heat_index_c.toFixed(1) : '?';
+        const s = r.smoke_adc != null ? r.smoke_adc : '?';
+        const f = r.flame_detected ? 'DETECTED!' : 'NORMAL';
+        const rss = r.wifi_rssi_db != null ? r.wifi_rssi_db : '?';
+        const u = r.uptime_ms != null ? Math.floor(r.uptime_ms / 1000) : 0;
+        const isAlert = r.alert === 1;
+
+        addConsoleLine(`[TELEMETRY] Temp: ${t}°C | HeatIdx: ${hi}°C | Humidity: ${h}% | Smoke ADC: ${s} | Flame: ${f}`, 'telemetry');
+        addConsoleLine(`[WIFI] RSSI: ${rss} dBm | Uptime: ${u}s`, 'info');
+        addConsoleLine(`[HEARTBEAT] Device: ${r.device_id || 'nodemcu_forest_node_01'} | Buzzer: ${r.buzzer_active ? 'ON' : 'OFF'} | LED: ${r.led_active ? 'ON' : 'OFF'}`, 'system');
+        if (isAlert) {
+            const trig = r.alert_triggers || {};
+            const reasons = [];
+            if (trig.high_temperature) reasons.push('HIGH_TEMP');
+            if (trig.low_humidity) reasons.push('LOW_HUMIDITY');
+            if (trig.high_smoke) reasons.push('HIGH_SMOKE');
+            if (trig.flame_detected) reasons.push('FLAME_DETECTED');
+            addConsoleLine(`[ALERT] Reasons: ${reasons.join(' ')}`, 'alert');
+        }
+        addConsoleLine(`[STATUS] ${isAlert ? '⚠ ALERT ACTIVE' : 'All Clear — Environment Normal.'}`, isAlert ? 'alert' : 'system');
+
         /* Charts */
         updateCharts(data);
 
@@ -224,8 +264,15 @@ $("#ai-analyze").addEventListener("click", async () => {
 });
 
 /* ===== POLLING ===== */
+addConsoleLine("ForestFire Detection System v2.0", 'system');
+addConsoleLine("NodeMCU ESP8266 initialized...", 'system');
+addConsoleLine("DHT11 warming up...", 'system');
+addConsoleLine("MQ-2 heater warming up (60s)...", 'system');
+addConsoleLine("WiFi connected", 'info');
+addConsoleLine("Ready — monitoring forest conditions 24/7", 'info');
+
 /* Keep Render awake (free tier sleeps after 15 min idle) */
-setInterval(() => { fetch('/api/readings').catch(() => {}); }, 9 * 60 * 1000); // every 9 min
+setInterval(() => { fetch('/api/readings').catch(() => {}); }, 9 * 60 * 1000);
 setInterval(fetchReadings, POLL_MS);
 setInterval(fetchAlerts, 15000);
 fetchReadings(); fetchAlerts();
