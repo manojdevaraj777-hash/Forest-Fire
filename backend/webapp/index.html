@@ -58,6 +58,21 @@
             </div>
         </section>
 
+        <!-- HARDWARE COMPONENTS -->
+        <section>
+            <h2>Hardware Components</h2>
+            <table class="comp-table">
+                <thead><tr><th>Component</th><th>Pin</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>&#127794; DHT11 (Temp/Hum)</td><td>D2 / GPIO4</td><td class="comp-ok" id="comp-dht">OK</td></tr>
+                    <tr><td>&#128293; MQ-2 (Smoke)</td><td>A0</td><td class="comp-ok" id="comp-mq2">OK</td></tr>
+                    <tr><td>&#128150; IR Flame</td><td>D1 / GPIO5</td><td class="comp-ok" id="comp-flame">OK</td></tr>
+                    <tr><td>&#128266; Buzzer</td><td>D5 / GPIO14</td><td class="comp-ok" id="comp-buzzer">OK</td></tr>
+                    <tr><td>&#128302; Red LED</td><td>D6 / GPIO12</td><td class="comp-ok" id="comp-led">OK</td></tr>
+                </tbody>
+            </table>
+        </section>
+
         <!-- CHARTS -->
         <section class="charts">
             <div class="chart-box"><h3>Temp & Humidity</h3><canvas id="chart-temp-hum"></canvas></div>

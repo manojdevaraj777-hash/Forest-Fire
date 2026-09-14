@@ -50,6 +50,10 @@ async function fetchReadings() {
         $("#st-rssi").className = cls(r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "WATCH" : "OK"); $("#st-rssi").textContent = txt(r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "WEAK" : "OK");
         if (r.alert) { $("#live-dot").style.background = "#b22222"; $("#status-text").textContent = "⚠ ALERT"; $("#status-text").style.color = "#b22222"; }
         else { $("#live-dot").style.background = "#1e7e34"; $("#status-text").textContent = "All Clear"; $("#status-text").style.color = "#1e7e34"; }
+        $("#comp-dht").className = r.temperature_c != null && !isNaN(r.temperature_c) ? "comp-ok" : "comp-fail";
+        $("#comp-dht").textContent = r.temperature_c != null && !isNaN(r.temperature_c) ? "OK" : "FAIL";
+        $("#comp-mq2").className = r.smoke_adc != null ? "comp-ok" : "comp-fail";
+        $("#comp-mq2").textContent = r.smoke_adc != null ? "OK" : "FAIL";
         updateCharts(data);
     } catch (e) { console.error(e); }
 }
