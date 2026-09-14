@@ -159,16 +159,20 @@ async function fetchReadings() {
         const mq2Ok = r.smoke_adc != null;
         const flameOk = r.flame_detected != null;
         const wifiOk = r.wifi_rssi_db != null;
+        const buzzerOk = r.buzzer_active === 1 || r.alert === 1;
+        const ledOk = r.led_active === 1 || r.alert === 1;
         $("#hw-dht-status").className = dhtOk ? "hw-status status-ok" : "hw-status status-alert";
         $("#hw-dht-status").textContent = dhtOk ? "✅ Working" : "❌ FAIL";
         $("#hw-mq2-status").className = mq2Ok ? "hw-status status-ok" : "hw-status status-alert";
         $("#hw-mq2-status").textContent = mq2Ok ? "✅ Working" : "❌ FAIL";
         $("#hw-flame-status").className = flameOk ? "hw-status status-ok" : "hw-status status-alert";
         $("#hw-flame-status").textContent = flameOk ? "✅ Working" : "❌ FAIL";
-        $("#hw-buzzer-status").className = "hw-status status-ok"; $("#hw-buzzer-status").textContent = "✅ OK";
-        $("#hw-led-status").className = "hw-status status-ok"; $("#hw-led-status").textContent = "✅ OK";
+        $("#hw-buzzer-status").className = buzzerOk ? "hw-status status-ok" : "hw-status status-alert";
+        $("#hw-buzzer-status").textContent = buzzerOk ? (r.alert ? "🔊 Active" : "✅ Standby") : "❌ FAIL";
+        $("#hw-led-status").className = ledOk ? "hw-status status-ok" : "hw-status status-alert";
+        $("#hw-led-status").textContent = ledOk ? (r.alert ? "💡 Blinking" : "✅ Standby") : "❌ FAIL";
         $("#hw-wifi-status").className = wifiOk ? "hw-status status-ok" : "hw-status status-alert";
-        $("#hw-wifi-status").textContent = wifiOk ? "✅ Connected" : "⚠ Weak";
+        $("#hw-wifi-status").textContent = wifiOk ? (r.wifi_rssi_db < -70 ? "⚠ Weak" : "✅ Connected") : "❌ FAIL";
 
         /* Health meter */
         let health = 100;

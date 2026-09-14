@@ -123,7 +123,9 @@ def init_db():
             high_temperature  INTEGER,
             low_humidity      INTEGER,
             high_smoke        INTEGER,
-            flame_alert       INTEGER
+            flame_alert       INTEGER,
+            buzzer_active     INTEGER DEFAULT 0,
+            led_active        INTEGER DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS alerts (
             id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -137,6 +139,13 @@ def init_db():
         );
         """
     )
+    db.commit()
+    # Add new columns if they don't exist (backward compatibility)
+    for col in ["buzzer_active", "led_active"]:
+        try:
+            db.execute(f"ALTER TABLE readings ADD COLUMN {col} INTEGER DEFAULT 0")
+        except Exception:
+            pass  # Column already exists
     db.commit()
     db.close()
 
@@ -157,6 +166,8 @@ def receive_reading():
     triggers = payload.get("alert_triggers", {})
     received_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     alert = payload.get("alert") or False
+    buzzer_active = 1 if payload.get("buzzer_active") else 0
+    led_active = 1 if payload.get("led_active") else 0
 
     active_types = []
     if triggers.get("high_temperature"): active_types.append("high_temperature")
@@ -192,7 +203,7 @@ def receive_reading():
         """INSERT INTO readings (received_at, device_id, alert, heartbeat, uptime_ms,
               wifi_rssi_db, temperature_c, humidity_percent, heat_index_c,
               smoke_adc, flame_detected, high_temperature, low_humidity,
-              high_smoke, flame_alert) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+              high_smoke, flame_alert, buzzer_active, led_active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (received_at, payload.get("device_id", "unknown"),
          1 if alert else 0, 1 if payload.get("heartbeat") else 0,
          payload.get("uptime_ms"), payload.get("wifi_rssi_db"),
@@ -202,7 +213,9 @@ def receive_reading():
          1 if triggers.get("high_temperature") else 0,
          1 if triggers.get("low_humidity") else 0,
          1 if triggers.get("high_smoke") else 0,
-         1 if triggers.get("flame_detected") else 0)
+         1 if triggers.get("flame_detected") else 0,
+         1 if payload.get("buzzer_active") else 0,
+         1 if payload.get("led_active") else 0)
     )
     db.commit()
     return jsonify({"ok": True, "received_at": received_at})
