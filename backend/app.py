@@ -36,7 +36,7 @@ def load_secret(path, key_name="access_token"):
         return ""
 
 PUSHBULLET_TOKEN = load_secret(PB_CONFIG_PATH)
-GEMINI_API_KEY = load_secret(GEMINI_CONFIG_PATH, "api_key")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or load_secret(GEMINI_CONFIG_PATH, "api_key")
 
 _last_alert_state = {"high_temperature": False, "low_humidity": False,
                      "high_smoke": False, "flame_detected": False}
