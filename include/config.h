@@ -44,7 +44,7 @@
 // Cloud HTTP POST endpoint
 // Local Flask backend (run: python backend/app.py on your PC)
 // Change the IP to match this computer's LAN IP (check with: ipconfig)
-#define CLOUD_API_ENDPOINT      "http://10.178.186.92:5000/api/reading"
+#define CLOUD_API_ENDPOINT      "https://forest-fire-0b5x.onrender.com/api/reading"
 
 // Device Identifier
 #define DEVICE_ID               "nodemcu_forest_node_01"
