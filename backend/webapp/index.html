@@ -8,35 +8,65 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <!-- Animated forest background canvas -->
     <canvas id="bg-canvas"></canvas>
     <div class="overlay"></div>
 
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>&#127794; Forest Fire Detection</h1>
-                <p class="tagline">Protect Every Tree · Save Our Forest</p>
+    <div class="app">
+        <!-- NAVBAR -->
+        <nav class="navbar glass">
+            <div class="nav-brand">
+                <span class="nav-icon">&#127794;</span>
+                <span class="nav-title">ForestFire</span>
+                <span class="nav-tag">Save Our Forest</span>
             </div>
-            <div class="header-right">
+            <div class="nav-links">
+                <button class="nav-btn active" data-section="dashboard">&#127968; Home</button>
+                <button class="nav-btn" data-section="trends">&#128202; Trends</button>
+                <button class="nav-btn" data-section="alerts">&#128680; Alerts</button>
+                <button class="nav-btn" data-section="ai">&#129704; AI</button>
+                <button class="nav-btn" data-section="hardware">&#128295; Hardware</button>
+            </div>
+            <div class="nav-status">
                 <span class="live-dot" id="live-dot"></span>
-                <span id="status-text">Monitoring...</span>
+                <span id="status-text">Monitoring</span>
             </div>
-        </header>
+        </nav>
 
-        <!-- ALERT BANNER (shows on alert) -->
+        <!-- ALERT BANNER -->
         <div class="alert-banner" id="alert-banner" style="display:none;">
             <div class="alert-banner-content">
                 <span class="alert-icon">&#128293;</span>
                 <span id="alert-banner-text">ALERT ACTIVE!</span>
+                <button class="alert-dismiss" id="alert-dismiss">&times;</button>
             </div>
         </div>
 
-        <main>
-            <!-- LIVE SENSORS -->
-            <section>
-                <h2>&#127794; Live Sensors</h2>
-                <div class="cards">
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- ====== DASHBOARD ====== -->
+            <section class="section" id="sec-dashboard">
+                <!-- Save Forest Hero -->
+                <div class="hero glass">
+                    <div class="hero-content">
+                        <h1>&#127794; Save Our Forest</h1>
+                        <p class="hero-sub">Every degree matters. Every tree counts. This system monitors forest conditions 24/7 to detect fire threats before they spread.</p>
+                        <div class="hero-stats">
+                            <div class="hero-stat"><span class="hero-stat-num" id="stat-readings">0</span><span>Readings</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num" id="stat-alerts">0</span><span>Alerts</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num">24/7</span><span>Monitoring</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num" id="stat-trees">1</span><span>Trees Protected</span></div>
+                        </div>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="forest-icon">&#127794;</div>
+                        <div class="fire-indicator" id="fire-indicator">&#128299;</div>
+                    </div>
+                </div>
+
+                <!-- Quick Sensor Cards -->
+                <h2>Live Readings</h2>
+                <div class="cards" id="dash-cards">
                     <div class="card glass">
                         <div class="card-icon">&#127794;</div>
                         <div class="card-label">Temperature</div>
@@ -84,72 +114,121 @@
                         <div class="card-status" id="st-rssi">—</div>
                     </div>
                 </div>
+
+                <!-- Forest Health Meter -->
+                <h2>Forest Health</h2>
+                <div class="health-meter glass">
+                    <div class="health-label">Overall Forest Condition</div>
+                    <div class="health-bar"><div class="health-fill" id="health-fill"></div></div>
+                    <div class="health-label" id="health-text">Calculating...</div>
+                </div>
             </section>
 
-            <!-- HARDWARE COMPONENTS -->
-            <section>
-                <h2>&#128295; Hardware Components</h2>
-                <table class="comp-table">
-                    <thead><tr><th>Component</th><th>Pin</th><th>Status</th></tr></thead>
-                    <tbody>
-                        <tr><td>&#127794; DHT11 (Temp/Humidity)</td><td>D2 / GPIO4</td><td class="comp-ok" id="comp-dht">OK</td></tr>
-                        <tr><td>&#128293; MQ-2 (Smoke)</td><td>A0</td><td class="comp-ok" id="comp-mq2">OK</td></tr>
-                        <tr><td>&#128150; IR Flame Sensor</td><td>D1 / GPIO5</td><td class="comp-ok" id="comp-flame">OK</td></tr>
-                        <tr><td>&#128266; Piezo Buzzer</td><td>D5 / GPIO14</td><td class="comp-ok" id="comp-buzzer">OK</td></tr>
-                        <tr><td>&#128302; Red Alert LED</td><td>D6 / GPIO12</td><td class="comp-ok" id="comp-led">OK</td></tr>
-                    </tbody>
-                </table>
-            </section>
-
-            <!-- CHARTS -->
-            <section>
-                <h2>&#128202; Sensor Trends</h2>
+            <!-- ====== SENSOR TRENDS ====== -->
+            <section class="section" id="sec-trends" style="display:none;">
+                <h2>Sensor Trends</h2>
+                <div class="trend-tabs">
+                    <button class="trend-tab active" data-chart="temp-hum">Temp &amp; Humidity</button>
+                    <button class="trend-tab" data-chart="smoke">Smoke ADC</button>
+                    <button class="trend-tab" data-chart="heat">Heat Index</button>
+                </div>
                 <div class="charts">
-                    <div class="chart-box glass"><h3>Temperature &amp; Humidity</h3><canvas id="chart-temp-hum"></canvas></div>
-                    <div class="chart-box glass"><h3>Smoke ADC</h3><canvas id="chart-smoke"></canvas></div>
+                    <div class="chart-box glass" id="chart-box-temp-hum"><h3>Temperature &amp; Humidity</h3><canvas id="chart-temp-hum"></canvas></div>
+                    <div class="chart-box glass" id="chart-box-smoke" style="display:none;"><h3>Smoke ADC</h3><canvas id="chart-smoke"></canvas></div>
+                    <div class="chart-box glass" id="chart-box-heat" style="display:none;"><h3>Heat Index</h3><canvas id="chart-heat"></canvas></div>
+                </div>
+                <div class="chart-info">
+                    <span>Showing last <strong id="chart-count">20</strong> readings</span>
+                    <span>Last update: <strong id="chart-updated">—</strong></span>
                 </div>
             </section>
 
-            <!-- FOREST AWARENESS -->
-            <section class="awareness">
-                <div class="awareness-box glass">
-                    <h2>&#127794; Forest Fire Awareness</h2>
-                    <p>Forest fires destroy ecosystems, endanger wildlife, and release massive amounts of CO₂. Every reading from this system helps detect threats early and <strong>save our forests</strong>.</p>
-                    <div class="awareness-stats">
-                        <div class="stat"><span class="stat-num" id="stat-readings">0</span><span class="stat-label">Readings Taken</span></div>
-                        <div class="stat"><span class="stat-num" id="stat-alerts">0</span><span class="stat-label">Alerts Logged</span></div>
-                        <div class="stat"><span class="stat-num">24/7</span><span class="stat-label">Monitoring</span></div>
-                    </div>
+            <!-- ====== ALERTS ====== -->
+            <section class="section" id="sec-alerts" style="display:none;">
+                <div class="section-header">
+                    <h2>Alert History</h2>
+                    <span class="alert-count-badge" id="alert-count-badge">0</span>
                 </div>
-            </section>
-
-            <!-- AI ASSISTANT -->
-            <section class="ai-section">
-                <button class="ai-btn" id="ai-toggle">🤖 AI Assistant</button>
-                <div class="ai-panel glass" id="ai-panel">
-                    <div class="ai-header">
-                        <h3>&#129704; AI Forest Analysis</h3>
-                        <button id="ai-close">&times;</button>
-                    </div>
-                    <button class="ai-analyze-btn" id="ai-analyze">Analyze Current Forest Data</button>
-                    <div class="ai-result" id="ai-result"></div>
-                </div>
-            </section>
-
-            <!-- ALERT HISTORY -->
-            <section>
-                <h2>&#128680; Alert History</h2>
-                <table id="alert-table">
-                    <thead><tr><th>Time</th><th>Type</th><th>Temp</th><th>Hum</th><th>Smoke</th></tr></thead>
+                <table class="comp-table">
+                    <thead>
+                        <tr><th>#</th><th>Time</th><th>Type</th><th>Temp °C</th><th>Hum %</th><th>Smoke</th><th>Heat °C</th></tr>
+                    </thead>
                     <tbody id="alert-tbody">
-                        <tr><td colspan="5">No alerts yet</td></tr>
+                        <tr><td colspan="7">No alerts yet</td></tr>
                     </tbody>
                 </table>
             </section>
+
+            <!-- ====== AI ASSISTANT ====== -->
+            <section class="section" id="sec-ai" style="display:none;">
+                <div class="ai-section-layout">
+                    <div class="ai-panel glass">
+                        <div class="ai-header">
+                            <h3>&#129704; AI Forest Analysis</h3>
+                            <button id="ai-close">&times;</button>
+                        </div>
+                        <p class="ai-desc">Get instant AI-powered insights on forest fire risk based on current sensor data.</p>
+                        <button class="ai-analyze-btn" id="ai-analyze">Analyze Current Data</button>
+                        <div class="ai-result" id="ai-result"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ====== HARDWARE STATUS ====== -->
+            <section class="section" id="sec-hardware" style="display:none;">
+                <h2>Hardware Components</h2>
+                <p class="section-desc">Monitor the status of each sensor and actuator in the field node.</p>
+                <div class="hardware-grid">
+                    <div class="hw-card glass" id="hw-dht">
+                        <div class="hw-icon">&#127794;</div>
+                        <div class="hw-name">DHT11</div>
+                        <div class="hw-pin">D2 / GPIO4</div>
+                        <div class="hw-detail">Temp &amp; Humidity</div>
+                        <div class="hw-status" id="hw-dht-status">—</div>
+                    </div>
+                    <div class="hw-card glass" id="hw-mq2">
+                        <div class="hw-icon">&#128293;</div>
+                        <div class="hw-name">MQ-2</div>
+                        <div class="hw-pin">A0</div>
+                        <div class="hw-detail">Smoke Detection</div>
+                        <div class="hw-status" id="hw-mq2-status">—</div>
+                    </div>
+                    <div class="hw-card glass" id="hw-flame">
+                        <div class="hw-icon">&#128150;</div>
+                        <div class="hw-name">IR Flame</div>
+                        <div class="hw-pin">D1 / GPIO5</div>
+                        <div class="hw-detail">Fire Detection</div>
+                        <div class="hw-status" id="hw-flame-status">—</div>
+                    </div>
+                    <div class="hw-card glass" id="hw-buzzer">
+                        <div class="hw-icon">&#128266;</div>
+                        <div class="hw-name">Buzzer</div>
+                        <div class="hw-pin">D5 / GPIO14</div>
+                        <div class="hw-detail">Alert Sound</div>
+                        <div class="hw-status" id="hw-buzzer-status">—</div>
+                    </div>
+                    <div class="hw-card glass" id="hw-led">
+                        <div class="hw-icon">&#128302;</div>
+                        <div class="hw-name">LED</div>
+                        <div class="hw-pin">D6 / GPIO12</div>
+                        <div class="hw-detail">Visual Alert</div>
+                        <div class="hw-status" id="hw-led-status">—</div>
+                    </div>
+                    <div class="hw-card glass" id="hw-wifi">
+                        <div class="hw-icon">&#9889;</div>
+                        <div class="hw-name">WiFi</div>
+                        <div class="hw-pin">ESP8266</div>
+                        <div class="hw-detail">Network Conn.</div>
+                        <div class="hw-status" id="hw-wifi-status">—</div>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
+        <!-- FOOTER -->
         <footer>
-            <p>&#127794; Forest Fire Detection System · Built to Protect Our Green Heritage</p>
+            <p>&#127794; Forest Fire Detection System · Built to Protect Our Green Heritage · Every Reading Saves a Tree</p>
         </footer>
     </div>
 
