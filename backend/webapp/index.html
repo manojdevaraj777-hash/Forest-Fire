@@ -3,108 +3,155 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Forest Fire Detection</title>
+    <title>Forest Fire Detection — Save Our Forest</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <header>
-        <h1>&#128276; Forest Fire Detection</h1>
-        <span class="live-dot" id="live-dot"></span>
-        <span id="status-text">Loading...</span>
-    </header>
+    <!-- Animated forest background canvas -->
+    <canvas id="bg-canvas"></canvas>
+    <div class="overlay"></div>
 
-    <main>
-        <!-- LIVE SENSORS -->
-        <section>
-            <h2>Live Sensors</h2>
-            <div class="cards">
-                <div class="card">
-                    <div class="card-label">Temperature</div>
-                    <div class="card-value" id="val-temp">—</div>
-                    <div class="card-unit">°C</div>
-                    <div class="card-status" id="st-temp">—</div>
-                </div>
-                <div class="card">
-                    <div class="card-label">Humidity</div>
-                    <div class="card-value" id="val-hum">—</div>
-                    <div class="card-unit">%</div>
-                    <div class="card-status" id="st-hum">—</div>
-                </div>
-                <div class="card">
-                    <div class="card-label">Smoke ADC</div>
-                    <div class="card-value" id="val-smoke">—</div>
-                    <div class="card-unit">/1024</div>
-                    <div class="card-status" id="st-smoke">—</div>
-                </div>
-                <div class="card">
-                    <div class="card-label">Heat Index</div>
-                    <div class="card-value" id="val-heat">—</div>
-                    <div class="card-unit">°C</div>
-                    <div class="card-status" id="st-heat">—</div>
-                </div>
-                <div class="card">
-                    <div class="card-label">Flame</div>
-                    <div class="card-value" id="val-flame">—</div>
-                    <div class="card-unit">—</div>
-                    <div class="card-status" id="st-flame">—</div>
-                </div>
-                <div class="card">
-                    <div class="card-label">WiFi</div>
-                    <div class="card-value" id="val-rssi">—</div>
-                    <div class="card-unit">dBm</div>
-                    <div class="card-status" id="st-rssi">—</div>
-                </div>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>&#127794; Forest Fire Detection</h1>
+                <p class="tagline">Protect Every Tree · Save Our Forest</p>
             </div>
-        </section>
-
-        <!-- HARDWARE COMPONENTS -->
-        <section>
-            <h2>Hardware Components</h2>
-            <table class="comp-table">
-                <thead><tr><th>Component</th><th>Pin</th><th>Status</th></tr></thead>
-                <tbody>
-                    <tr><td>&#127794; DHT11 (Temp/Hum)</td><td>D2 / GPIO4</td><td class="comp-ok" id="comp-dht">OK</td></tr>
-                    <tr><td>&#128293; MQ-2 (Smoke)</td><td>A0</td><td class="comp-ok" id="comp-mq2">OK</td></tr>
-                    <tr><td>&#128150; IR Flame</td><td>D1 / GPIO5</td><td class="comp-ok" id="comp-flame">OK</td></tr>
-                    <tr><td>&#128266; Buzzer</td><td>D5 / GPIO14</td><td class="comp-ok" id="comp-buzzer">OK</td></tr>
-                    <tr><td>&#128302; Red LED</td><td>D6 / GPIO12</td><td class="comp-ok" id="comp-led">OK</td></tr>
-                </tbody>
-            </table>
-        </section>
-
-        <!-- CHARTS -->
-        <section class="charts">
-            <div class="chart-box"><h3>Temp & Humidity</h3><canvas id="chart-temp-hum"></canvas></div>
-            <div class="chart-box"><h3>Smoke ADC</h3><canvas id="chart-smoke"></canvas></div>
-        </section>
-
-        <!-- AI ASSISTANT -->
-        <section class="ai-section">
-            <button class="ai-btn" id="ai-toggle">🤖 AI Assistant</button>
-            <div class="ai-panel" id="ai-panel">
-                <div class="ai-header">
-                    <h3>AI Analysis</h3>
-                    <button id="ai-close">&times;</button>
-                </div>
-                <button class="ai-analyze-btn" id="ai-analyze">Analyze Current Data</button>
-                <div class="ai-result" id="ai-result"></div>
+            <div class="header-right">
+                <span class="live-dot" id="live-dot"></span>
+                <span id="status-text">Monitoring...</span>
             </div>
-        </section>
+        </header>
 
-        <!-- ALERT HISTORY -->
-        <section>
-            <h2>Alerts</h2>
-            <table id="alert-table">
-                <thead>
-                    <tr><th>Time</th><th>Type</th><th>Temp</th><th>Hum</th><th>Smoke</th></tr>
-                </thead>
-                <tbody id="alert-tbody">
-                    <tr><td colspan="5">No alerts yet</td></tr>
-                </tbody>
-            </table>
-        </section>
-    </main>
+        <!-- ALERT BANNER (shows on alert) -->
+        <div class="alert-banner" id="alert-banner" style="display:none;">
+            <div class="alert-banner-content">
+                <span class="alert-icon">&#128293;</span>
+                <span id="alert-banner-text">ALERT ACTIVE!</span>
+            </div>
+        </div>
+
+        <main>
+            <!-- LIVE SENSORS -->
+            <section>
+                <h2>&#127794; Live Sensors</h2>
+                <div class="cards">
+                    <div class="card glass">
+                        <div class="card-icon">&#127794;</div>
+                        <div class="card-label">Temperature</div>
+                        <div class="card-value" id="val-temp">—</div>
+                        <div class="card-unit">°C</div>
+                        <div class="card-bar"><div class="card-bar-fill" id="bar-temp"></div></div>
+                        <div class="card-status" id="st-temp">—</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon">&#127811;</div>
+                        <div class="card-label">Humidity</div>
+                        <div class="card-value" id="val-hum">—</div>
+                        <div class="card-unit">%</div>
+                        <div class="card-bar"><div class="card-bar-fill" id="bar-hum"></div></div>
+                        <div class="card-status" id="st-hum">—</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon">&#128293;</div>
+                        <div class="card-label">Smoke ADC</div>
+                        <div class="card-value" id="val-smoke">—</div>
+                        <div class="card-unit">/1024</div>
+                        <div class="card-bar"><div class="card-bar-fill" id="bar-smoke"></div></div>
+                        <div class="card-status" id="st-smoke">—</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon">&#128299;</div>
+                        <div class="card-label">Heat Index</div>
+                        <div class="card-value" id="val-heat">—</div>
+                        <div class="card-unit">°C</div>
+                        <div class="card-bar"><div class="card-bar-fill" id="bar-heat"></div></div>
+                        <div class="card-status" id="st-heat">—</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon">&#128150;</div>
+                        <div class="card-label">Flame</div>
+                        <div class="card-value" id="val-flame">—</div>
+                        <div class="card-unit">Active LOW</div>
+                        <div class="card-status" id="st-flame">—</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon">&#9889;</div>
+                        <div class="card-label">WiFi</div>
+                        <div class="card-value" id="val-rssi">—</div>
+                        <div class="card-unit">dBm</div>
+                        <div class="card-status" id="st-rssi">—</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HARDWARE COMPONENTS -->
+            <section>
+                <h2>&#128295; Hardware Components</h2>
+                <table class="comp-table">
+                    <thead><tr><th>Component</th><th>Pin</th><th>Status</th></tr></thead>
+                    <tbody>
+                        <tr><td>&#127794; DHT11 (Temp/Humidity)</td><td>D2 / GPIO4</td><td class="comp-ok" id="comp-dht">OK</td></tr>
+                        <tr><td>&#128293; MQ-2 (Smoke)</td><td>A0</td><td class="comp-ok" id="comp-mq2">OK</td></tr>
+                        <tr><td>&#128150; IR Flame Sensor</td><td>D1 / GPIO5</td><td class="comp-ok" id="comp-flame">OK</td></tr>
+                        <tr><td>&#128266; Piezo Buzzer</td><td>D5 / GPIO14</td><td class="comp-ok" id="comp-buzzer">OK</td></tr>
+                        <tr><td>&#128302; Red Alert LED</td><td>D6 / GPIO12</td><td class="comp-ok" id="comp-led">OK</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- CHARTS -->
+            <section>
+                <h2>&#128202; Sensor Trends</h2>
+                <div class="charts">
+                    <div class="chart-box glass"><h3>Temperature &amp; Humidity</h3><canvas id="chart-temp-hum"></canvas></div>
+                    <div class="chart-box glass"><h3>Smoke ADC</h3><canvas id="chart-smoke"></canvas></div>
+                </div>
+            </section>
+
+            <!-- FOREST AWARENESS -->
+            <section class="awareness">
+                <div class="awareness-box glass">
+                    <h2>&#127794; Forest Fire Awareness</h2>
+                    <p>Forest fires destroy ecosystems, endanger wildlife, and release massive amounts of CO₂. Every reading from this system helps detect threats early and <strong>save our forests</strong>.</p>
+                    <div class="awareness-stats">
+                        <div class="stat"><span class="stat-num" id="stat-readings">0</span><span class="stat-label">Readings Taken</span></div>
+                        <div class="stat"><span class="stat-num" id="stat-alerts">0</span><span class="stat-label">Alerts Logged</span></div>
+                        <div class="stat"><span class="stat-num">24/7</span><span class="stat-label">Monitoring</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI ASSISTANT -->
+            <section class="ai-section">
+                <button class="ai-btn" id="ai-toggle">🤖 AI Assistant</button>
+                <div class="ai-panel glass" id="ai-panel">
+                    <div class="ai-header">
+                        <h3>&#129704; AI Forest Analysis</h3>
+                        <button id="ai-close">&times;</button>
+                    </div>
+                    <button class="ai-analyze-btn" id="ai-analyze">Analyze Current Forest Data</button>
+                    <div class="ai-result" id="ai-result"></div>
+                </div>
+            </section>
+
+            <!-- ALERT HISTORY -->
+            <section>
+                <h2>&#128680; Alert History</h2>
+                <table id="alert-table">
+                    <thead><tr><th>Time</th><th>Type</th><th>Temp</th><th>Hum</th><th>Smoke</th></tr></thead>
+                    <tbody id="alert-tbody">
+                        <tr><td colspan="5">No alerts yet</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+
+        <footer>
+            <p>&#127794; Forest Fire Detection System · Built to Protect Our Green Heritage</p>
+        </footer>
+    </div>
 
     <script src="app.js"></script>
 </body>
