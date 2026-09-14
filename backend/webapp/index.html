@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Forest Fire Detection — Web App</title>
+    <title>Forest Fire Detection — Project Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -11,7 +11,10 @@
     <header>
         <div class="header-left">
             <span class="logo">&#128276;</span>
-            <h1>Forest Fire Detection</h1>
+            <div>
+                <h1>Forest Fire Detection System</h1>
+                <span class="subtitle">NodeMCU ESP8266 · Live Dashboard</span>
+            </div>
         </div>
         <div class="header-right">
             <span class="live-dot" id="live-dot"></span>
@@ -20,33 +23,118 @@
     </header>
 
     <main>
-        <section class="cards">
+        <!-- PROJECT OVERVIEW -->
+        <section class="overview">
+            <h2>Project Overview</h2>
+            <div class="grid-info">
+                <div class="info-box">
+                    <div class="info-label">Project</div>
+                    <div class="info-value">Forest Fire Detection System v2.0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Microcontroller</div>
+                    <div class="info-value">NodeMCU ESP8266 (ESP-12E)</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Framework</div>
+                    <div class="info-value">Arduino IDE + PlatformIO</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Cloud Backend</div>
+                    <div class="info-value">Flask + SQLite + Gemini AI</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">OTA Hostname</div>
+                    <div class="info-value">forest-fire-node-01:8266</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Dashboard</div>
+                    <div class="info-value"><a href="http://localhost:5000/">http://localhost:5000/</a></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HARDWARE COMPONENTS -->
+        <section class="components">
+            <h2>Hardware Components</h2>
+            <table class="comp-table">
+                <thead>
+                    <tr><th>Component</th><th>NodeMCU Pin</th><th>GPIO</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>&#127794; DHT11 (Temp/Humidity)</td><td>D2</td><td>GPIO4</td><td class="comp-ok" id="comp-dht">OK</td></tr>
+                    <tr><td>&#128293; MQ-2 (Smoke)</td><td>A0</td><td>ADC</td><td class="comp-ok" id="comp-mq2">OK</td></tr>
+                    <tr><td>&#128150; IR Flame Sensor</td><td>D1</td><td>GPIO5</td><td class="comp-ok" id="comp-flame">OK</td></tr>
+                    <tr><td>&#128266; Piezo Buzzer</td><td>D5</td><td>GPIO14</td><td class="comp-ok" id="comp-buzzer">OK</td></tr>
+                    <tr><td>&#128302; Red Alert LED</td><td>D6</td><td>GPIO12</td><td class="comp-ok" id="comp-led">OK</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- SENSOR CARDS -->
+        <section class="cards" id="sensor-cards">
             <div class="card" id="card-temp">
                 <div class="card-label">Temperature</div>
                 <div class="card-value" id="val-temp">—</div>
-                <div class="card-unit">°C</div>
+                <div class="card-unit">°C · threshold 45</div>
                 <div class="card-status" id="status-temp">—</div>
             </div>
             <div class="card" id="card-hum">
                 <div class="card-label">Humidity</div>
                 <div class="card-value" id="val-hum">—</div>
-                <div class="card-unit">%</div>
+                <div class="card-unit">% · threshold 20</div>
                 <div class="card-status" id="status-hum">—</div>
             </div>
             <div class="card" id="card-smoke">
                 <div class="card-label">Smoke ADC</div>
                 <div class="card-value" id="val-smoke">—</div>
-                <div class="card-unit">/1024</div>
+                <div class="card-unit">/1024 · threshold 400</div>
                 <div class="card-status" id="status-smoke">—</div>
+            </div>
+            <div class="card" id="card-heat">
+                <div class="card-label">Heat Index</div>
+                <div class="card-value" id="val-heat">—</div>
+                <div class="card-unit">°C · threshold 52</div>
+                <div class="card-status" id="status-heat">—</div>
             </div>
             <div class="card" id="card-flame">
                 <div class="card-label">Flame</div>
                 <div class="card-value" id="val-flame">—</div>
-                <div class="card-unit">—</div>
+                <div class="card-unit">Active LOW</div>
                 <div class="card-status" id="status-flame">—</div>
+            </div>
+            <div class="card" id="card-rssi">
+                <div class="card-label">WiFi RSSI</div>
+                <div class="card-value" id="val-rssi">—</div>
+                <div class="card-unit">dBm</div>
+                <div class="card-status" id="status-rssi">—</div>
             </div>
         </section>
 
+        <!-- BACKEND STATUS -->
+        <section class="backend-status">
+            <h2>Backend Status</h2>
+            <div class="backend-grid">
+                <div class="backend-box">
+                    <div class="b-label">API Health</div>
+                    <div class="b-value" id="api-health">Checking...</div>
+                </div>
+                <div class="backend-box">
+                    <div class="b-label">Database</div>
+                    <div class="b-value" id="db-rows">—</div>
+                </div>
+                <div class="backend-box">
+                    <div class="b-label">Alerts Stored</div>
+                    <div class="b-value" id="alert-count">—</div>
+                </div>
+                <div class="backend-box">
+                    <div class="b-label">Gemini AI</div>
+                    <div class="b-value" id="gemini-status">Checking...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHARTS -->
         <section class="charts">
             <div class="chart-box">
                 <h3>Temperature &amp; Humidity</h3>
@@ -58,6 +146,7 @@
             </div>
         </section>
 
+        <!-- AI ASSISTANT -->
         <section class="ai-section">
             <button class="ai-btn" id="ai-toggle">🤖 AI Assistant</button>
             <div class="ai-panel" id="ai-panel">
@@ -66,21 +155,22 @@
                     <button id="ai-close">&times;</button>
                 </div>
                 <div class="ai-body" id="ai-body">
-                    <p class="ai-hint">Click "Analyze" to get AI insights on current readings.</p>
+                    <p class="ai-hint">Analyze current sensor readings with Gemini AI.</p>
                     <button class="ai-analyze-btn" id="ai-analyze">Analyze Current Data</button>
                     <div class="ai-result" id="ai-result"></div>
                 </div>
             </div>
         </section>
 
+        <!-- ALERT HISTORY -->
         <section class="history">
             <h3>Alert History</h3>
             <table id="alert-table">
                 <thead>
-                    <tr><th>Time</th><th>Type</th><th>Temp °C</th><th>Hum %</th><th>Smoke</th></tr>
+                    <tr><th>Time</th><th>Type</th><th>Temp °C</th><th>Hum %</th><th>Smoke</th><th>Flame</th></tr>
                 </thead>
                 <tbody id="alert-tbody">
-                    <tr><td colspan="5">Loading...</td></tr>
+                    <tr><td colspan="6">Loading...</td></tr>
                 </tbody>
             </table>
         </section>
