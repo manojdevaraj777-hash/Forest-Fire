@@ -73,6 +73,11 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
                       bool isTempAlert, bool isHumidityAlert,
                       bool isSmokeAlert, bool isFlameAlert,
                       bool isHeartbeat);
+bool sendCloudPayload(float temp, float humidity, float heatIndex,
+                      int smoke, bool flame,
+                      bool isTempAlert, bool isHumidityAlert,
+                      bool isSmokeAlert, bool isFlameAlert,
+                      bool isHeartbeat, bool buzzerActive, bool ledActive);
 int  readSmokeAverage();
 void playSOSBuzzer();
 void playBeepCode(int count, int toneDuration, int freq);
@@ -303,7 +308,7 @@ void readSensorsAndEvaluate() {
             lastAlertPostTime = currentMillis;
             sendCloudPayload(tempC, humidity, heatIndex, smokeVal, flameDetected,
                              tempFinalAlert, isHumidityAlert, isSmokeAlert, isFlameAlert,
-                             false); // isHeartbeat = false
+                             false, true, true); // isHeartbeat=false, buzzerActive=true, ledActive=true
         }
     } else {
         // --- 7. Deactivate alarms when all clear ---
@@ -317,7 +322,7 @@ void readSensorsAndEvaluate() {
         Serial.println(F("[HEARTBEAT] Sending keep-alive to cloud..."));
         sendCloudPayload(tempC, humidity, heatIndex, smokeVal, flameDetected,
                          tempFinalAlert, isHumidityAlert, isSmokeAlert, isFlameAlert,
-                         true); // isHeartbeat = true
+                         true, false, false); // isHeartbeat=true, buzzerActive=false, ledActive=false
     }
 }
 
@@ -404,7 +409,7 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
                       int smoke, bool flame,
                       bool isTempAlert, bool isHumidityAlert,
                       bool isSmokeAlert, bool isFlameAlert,
-                      bool isHeartbeat) {
+                      bool isHeartbeat, bool buzzerActive, bool ledActive) {
 
     if (WiFi.status() != WL_CONNECTED) {
         Serial.println(F("[CLOUD] WiFi not connected — skipping POST."));
@@ -417,7 +422,9 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
     doc["alert"]        = !isHeartbeat && (isTempAlert || isHumidityAlert || isSmokeAlert || isFlameAlert);
     doc["heartbeat"]    = isHeartbeat;
     doc["uptime_ms"]    = millis();
-    doc["wifi_rssi_db"] = WiFi.RSSI(); // Signal strength bonus info
+    doc["wifi_rssi_db"] = WiFi.RSSI();
+    doc["buzzer_active"] = buzzerActive;
+    doc["led_active"]    = ledActive; // Signal strength bonus info
 
     JsonObject triggers = doc["alert_triggers"].to<JsonObject>();
     triggers["high_temperature"]  = isTempAlert;
