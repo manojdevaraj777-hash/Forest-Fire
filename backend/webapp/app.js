@@ -1,61 +1,41 @@
 const POLL_MS = 3000;
 const $ = (s) => document.querySelector(s);
 
-/* ===== ANIMATED EMBER BACKGROUND ===== */
-const bgCanvas = $("#bg-canvas");
-const ctx = bgCanvas.getContext("2d");
-let embers = [];
-
-function resizeCanvas() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; initEmbers(); }
-window.addEventListener("resize", resizeCanvas);
-
-class Ember {
-    constructor() { this.reset(); }
-    reset() {
-        this.x = Math.random() * bgCanvas.width;
-        this.y = bgCanvas.height + 10;
-        this.size = 1 + Math.random() * 2.5;
-        this.speedY = -(0.3 + Math.random() * 1.2);
-        this.speedX = -0.5 + Math.random();
-        this.life = 1;
-        this.decay = 0.002 + Math.random() * 0.004;
-        this.glow = Math.random();
-    }
-    update() {
-        this.y += this.speedY;
-        this.x += this.speedX + Math.sin(this.life * 10) * 0.3;
-        this.life -= this.decay;
-        if (this.life <= 0 || this.y < -10) this.reset();
-    }
-    draw() {
-        const a = this.life * 0.7;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, Math.max(0.5, this.size), 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, ${130 + Math.floor(this.glow * 100)}, 30, ${a})`;
-        ctx.shadowBlur = 8; ctx.shadowColor = `rgba(255, 100, 20, ${a})`;
-        ctx.fill(); ctx.shadowBlur = 0;
+/* ===== EMBER PARTICLES ===== */
+function createEmbers() {
+    const layer = $("#ember-layer");
+    for (let i = 0; i < 30; i++) {
+        const e = document.createElement("div");
+        e.className = "ember";
+        e.style.left = Math.random() * 100 + "%";
+        e.style.animationDuration = (3 + Math.random() * 5) + "s";
+        e.style.animationDelay = Math.random() * 5 + "s";
+        e.style.width = (2 + Math.random() * 3) + "px";
+        e.style.height = e.style.width;
+        layer.appendChild(e);
     }
 }
-function initEmbers() { embers = []; for (let i = 0; i < 60; i++) embers.push(new Ember()); }
-function animateBg() { ctx.clearRect(0, 0, bgCanvas.width, bgCanvas.height); embers.forEach(e => { e.update(); e.draw(); }); requestAnimationFrame(animateBg); }
-resizeCanvas(); initEmbers(); animateBg();
+createEmbers();
+
+/* ===== LUCIDE ICONS ===== */
+lucide.createIcons();
 
 /* ===== CHARTS ===== */
-const chartOpts = { responsive: true, animation: false, plugins: { legend: { labels: { color: "#b8d4b3", font: { size: 11 } } } }, scales: {} };
+const baseOpts = { responsive: true, animation: false, plugins: { legend: { labels: { color: "#6a9a6a", font: { size: 11 } } } }, scales: {} };
 const chartTempHum = new Chart($("#chart-temp-hum"), {
     type: "line", data: { labels: [], datasets: [
-        { label: "Temp °C", data: [], borderColor: "#ff6b35", tension: 0.3, pointRadius: 2, borderWidth: 2, fill: false },
-        { label: "Hum %", data: [], borderColor: "#4a8c3f", tension: 0.3, pointRadius: 2, borderWidth: 2, fill: false, yAxisID: "y1" },
+        { label: "Temp °C", data: [], borderColor: "#ff6b35", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#ff6b35", borderWidth: 2, fill: false },
+        { label: "Hum %", data: [], borderColor: "#4a8c3f", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#4a8c3f", borderWidth: 2, fill: false, yAxisID: "y1" },
     ]},
-    options: { ...chartOpts, scales: { x: { display: false }, y: { beginAtZero: true, position: "left" }, y1: { position: "right", beginAtZero: true, grid: { drawOnChartArea: false } } } },
+    options: { ...baseOpts, scales: { x: { display: false }, y: { beginAtZero: true, position: "left" }, y1: { position: "right", beginAtZero: true, grid: { drawOnChartArea: false } } } },
 });
 const chartSmoke = new Chart($("#chart-smoke"), {
-    type: "line", data: { labels: [], datasets: [{ label: "Smoke ADC", data: [], borderColor: "#ff9f1c", tension: 0.3, pointRadius: 2, fill: true, backgroundColor: "rgba(255,159,28,0.08)", borderWidth: 2 }] },
-    options: { ...chartOpts, scales: { x: { display: false }, y: { beginAtZero: true, max: 1024 } } },
+    type: "line", data: { labels: [], datasets: [{ label: "Smoke ADC", data: [], borderColor: "#ff9f1c", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#ff9f1c", fill: true, backgroundColor: "rgba(255,159,28,0.06)", borderWidth: 2 }] },
+    options: { ...baseOpts, scales: { x: { display: false }, y: { beginAtZero: true, max: 1024 } } },
 });
 const chartHeat = new Chart($("#chart-heat"), {
-    type: "line", data: { labels: [], datasets: [{ label: "Heat Index °C", data: [], borderColor: "#e63946", tension: 0.3, pointRadius: 2, fill: true, backgroundColor: "rgba(230,57,70,0.08)", borderWidth: 2 }] },
-    options: { ...chartOpts, scales: { x: { display: false }, y: { beginAtZero: true } } },
+    type: "line", data: { labels: [], datasets: [{ label: "Heat Index °C", data: [], borderColor: "#e63946", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#e63946", fill: true, backgroundColor: "rgba(230,57,70,0.06)", borderWidth: 2 }] },
+    options: { ...baseOpts, scales: { x: { display: false }, y: { beginAtZero: true } } },
 });
 let tempBuf = [], humBuf = [], smokeBuf = [], heatBuf = [], labelsBuf = [];
 
@@ -75,8 +55,9 @@ function updateCharts(data) {
     $("#chart-updated").textContent = new Date().toLocaleTimeString();
 }
 
-/* ===== SET BAR HELPERS ===== */
+/* ===== HELPERS ===== */
 function setBar(id, val, max) { const el = $(id); if (!el) return; el.style.width = Math.min(100, (val / max) * 100) + "%"; }
+function setCritical(cardId, isCritical) { const card = $(cardId); if (!card) return; if (isCritical) card.classList.add("critical"); else card.classList.remove("critical"); }
 
 /* ===== NAVIGATION ===== */
 document.querySelectorAll(".nav-btn").forEach(btn => {
@@ -86,6 +67,18 @@ document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.classList.add("active");
         document.querySelectorAll(".section").forEach(s => s.style.display = "none");
         $(`#sec-${sec}`).style.display = "";
+    });
+});
+
+/* ===== TREND TABS ===== */
+document.querySelectorAll(".trend-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+        const chart = tab.dataset.chart;
+        document.querySelectorAll(".trend-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        ["temp-hum", "smoke", "heat"].forEach(c => {
+            $(`#chart-box-${c}`).style.display = c === chart ? "" : "none";
+        });
     });
 });
 
@@ -100,7 +93,7 @@ async function fetchReadings() {
         if (!data.length) return;
         const r = data[0];
 
-        /* Sensor cards */
+        /* Sensor values */
         $("#val-temp").textContent = r.temperature_c != null ? r.temperature_c.toFixed(1) : "—";
         $("#val-hum").textContent = r.humidity_percent != null ? r.humidity_percent.toFixed(1) : "—";
         $("#val-smoke").textContent = r.smoke_adc != null ? r.smoke_adc : "—";
@@ -112,29 +105,47 @@ async function fetchReadings() {
         setBar("#bar-smoke", Math.max(0, r.smoke_adc ?? 0), 1024);
         setBar("#bar-heat", Math.max(0, r.heat_index_c ?? 0), 60);
 
+        /* Contextual card colors */
+        const tempCritical = r.temperature_c != null && r.temperature_c > 45;
+        const smokeCritical = r.smoke_adc != null && r.smoke_adc > 400;
+        const heatCritical = r.heat_index_c != null && r.heat_index_c > 52;
+        setCritical("#card-temp", tempCritical);
+        setCritical("#card-smoke", smokeCritical);
+        setCritical("#card-heat", heatCritical);
+        if (tempCritical) { $("#card-temp").style.borderColor = "rgba(255,68,34,0.4)"; } else { $("#card-temp").style.borderColor = ""; }
+        if (smokeCritical) { $("#card-smoke").style.borderColor = "rgba(255,159,28,0.4)"; } else { $("#card-smoke").style.borderColor = ""; }
+        if (heatCritical) { $("#card-heat").style.borderColor = "rgba(230,57,70,0.4)"; } else { $("#card-heat").style.borderColor = ""; }
+
         /* Status badges */
-        const cls = (a) => a ? "status-alert" : "status-ok";
-        $("#st-temp").className = cls(r.temperature_c != null && r.temperature_c > 45); $("#st-temp").textContent = r.temperature_c != null && r.temperature_c > 45 ? "⚠ ALERT" : "OK";
-        $("#st-hum").className = cls(r.humidity_percent != null && r.humidity_percent < 20); $("#st-hum").textContent = r.humidity_percent != null && r.humidity_percent < 20 ? "LOW" : "OK";
-        $("#st-smoke").className = cls(r.smoke_adc != null && r.smoke_adc > 400); $("#st-smoke").textContent = r.smoke_adc != null && r.smoke_adc > 400 ? "⚠ ALERT" : "OK";
-        $("#st-heat").className = cls(r.heat_index_c != null && r.heat_index_c > 52); $("#st-heat").textContent = r.heat_index_c != null && r.heat_index_c > 52 ? "⚠ ALERT" : "OK";
-        $("#st-flame").className = cls(r.flame_detected); $("#st-flame").textContent = r.flame_detected ? "🔴 DETECTED" : "🟢 NORMAL";
-        $("#st-rssi").className = r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "status-watch" : "status-ok"; $("#st-rssi").textContent = r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "WEAK" : "OK";
+        $("#st-temp").className = tempCritical ? "sensor-status status-alert" : "sensor-status status-ok";
+        $("#st-temp").textContent = tempCritical ? "⚠ ALERT" : "OK";
+        $("#st-hum").className = (r.humidity_percent != null && r.humidity_percent < 20) ? "sensor-status status-watch" : "sensor-status status-ok";
+        $("#st-hum").textContent = (r.humidity_percent != null && r.humidity_percent < 20) ? "LOW" : "OK";
+        $("#st-smoke").className = smokeCritical ? "sensor-status status-alert" : "sensor-status status-ok";
+        $("#st-smoke").textContent = smokeCritical ? "⚠ ALERT" : "OK";
+        $("#st-heat").className = heatCritical ? "sensor-status status-alert" : "sensor-status status-ok";
+        $("#st-heat").textContent = heatCritical ? "⚠ ALERT" : "OK";
+        $("#st-flame").className = r.flame_detected ? "sensor-status status-alert" : "sensor-status status-ok";
+        $("#st-flame").textContent = r.flame_detected ? "🔴 DETECTED" : "🟢 NORMAL";
+        $("#st-rssi").className = r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "sensor-status status-watch" : "sensor-status status-ok";
+        $("#st-rssi").textContent = r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "WEAK" : "OK";
 
         /* Alert banner */
         if (r.alert) {
             $("#alert-banner").style.display = "flex";
             const trig = r.alert_triggers || {};
-            const msg = trig.high_smoke ? "HIGH SMOKE DETECTED" : trig.flame_detected ? "FLAME DETECTED" : trig.high_temperature ? "HIGH TEMPERATURE" : "ALERT ACTIVE";
+            const msg = trig.high_smoke ? "HIGH SMOKE DETECTED" : trig.flame_detected ? "FLAME DETECTED" : trig.high_temperature ? "HIGH TEMP" : "ALERT ACTIVE";
             $("#alert-banner-text").textContent = "⚠ " + msg;
-            $("#live-dot").style.background = "var(--fire-red)";
-            $("#status-text").textContent = "⚠ ALERT"; $("#status-text").style.color = "var(--fire-red)";
-            $("#fire-indicator").textContent = "🔥";
+            $("#live-dot").style.background = "var(--ember)";
+            $("#live-dot").style.animation = "none";
+            $("#live-dot").offsetHeight;
+            $("#live-dot").style.animation = "pulseRed 1s infinite";
+            $("#status-text").textContent = "⚠ ALERT"; $("#status-text").style.color = "var(--ember)";
         } else {
             $("#alert-banner").style.display = "none";
             $("#live-dot").style.background = "var(--forest-glow)";
+            $("#live-dot").style.animation = "";
             $("#status-text").textContent = "All Clear — Monitoring"; $("#status-text").style.color = "var(--text-muted)";
-            $("#fire-indicator").textContent = "💚";
         }
 
         /* Hardware status */
@@ -162,18 +173,15 @@ async function fetchReadings() {
         if (r.wifi_rssi_db != null && r.wifi_rssi_db < -70) health -= 10;
         health = Math.max(0, Math.min(100, health));
         $("#health-fill").style.width = health + "%";
-        $("#health-text").textContent = health > 70 ? "🌿 Healthy" : health > 40 ? "⚠ At Risk" : "🔴 Critical";
-        $("#health-fill").style.background = health > 70 ? "linear-gradient(90deg, var(--forest-glow), #6fbf73)" : health > 40 ? "linear-gradient(90deg, var(--fire-glow), #ff9f1c)" : "linear-gradient(90deg, var(--fire-red), #e63946)";
+        if (health > 70) { $("#health-fill").style.background = "linear-gradient(90deg, var(--forest-glow), var(--forest-light))"; $("#health-text").textContent = "🌿 Healthy"; }
+        else if (health > 40) { $("#health-fill").style.background = "linear-gradient(90deg, var(--fire-glow), var(--fire-orange))"; $("#health-text").textContent = "⚠ At Risk"; }
+        else { $("#health-fill").style.background = "linear-gradient(90deg, var(--fire-red), #ff4422)"; $("#health-text").textContent = "🔴 Critical"; }
 
         /* Charts */
         updateCharts(data);
 
-        /* Dashboard stats */
+        /* Stats */
         $("#stat-readings").textContent = data.length;
-
-        /* Trees counter */
-        const trees = Math.floor(Math.random() * 500) + 100;
-        $("#stat-trees").textContent = trees;
 
     } catch (e) { console.error(e); }
 }
@@ -192,7 +200,7 @@ async function fetchAlerts() {
     } catch (e) { console.error(e); }
 }
 
-/* ===== AI ASSISTANT ===== */
+/* ===== AI ===== */
 const aiResult = $("#ai-result");
 $("#ai-analyze").addEventListener("click", async () => {
     aiResult.innerHTML = '<p class="ai-hint">🌿 Analyzing forest data with Gemini AI...</p>';
@@ -200,7 +208,7 @@ $("#ai-analyze").addEventListener("click", async () => {
         const res = await fetch("/api/ai/suggest");
         const data = await res.json();
         if (data.analysis) { aiResult.innerHTML = `<pre class="ai-output">${escHtml(data.analysis)}</pre>`; }
-        else { aiResult.innerHTML = '<p class="ai-error">No AI response. Check Gemini API key in backend config.</p>'; }
+        else { aiResult.innerHTML = '<p class="ai-error">No AI response. Check Gemini config.</p>'; }
     } catch (e) { aiResult.innerHTML = `<p class="ai-error">Error: ${escHtml(e.message)}</p>`; }
 });
 
@@ -208,3 +216,8 @@ $("#ai-analyze").addEventListener("click", async () => {
 setInterval(fetchReadings, POLL_MS);
 setInterval(fetchAlerts, 15000);
 fetchReadings(); fetchAlerts();
+
+/* ===== ADDITIONAL KEYFRAME for red pulse dot ===== */
+const style = document.createElement("style");
+style.textContent = `@keyframes pulseRed { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,34,0.6); } 50% { box-shadow: 0 0 0 6px rgba(255,68,34,0); } }`;
+document.head.appendChild(style);

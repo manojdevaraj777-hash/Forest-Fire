@@ -3,28 +3,36 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Forest Fire Detection — Save Our Forest</title>
+    <title>Forest Fire Command Center</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <canvas id="bg-canvas"></canvas>
+    <svg class="topo-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs><pattern id="topo" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M0 40 Q20 20 40 40 Q60 60 80 40" fill="none" stroke="rgba(74,140,63,0.06)" stroke-width="0.5"/>
+            <path d="M0 60 Q20 40 40 60 Q60 80 80 60" fill="none" stroke="rgba(74,140,63,0.04)" stroke-width="0.5"/>
+        </pattern></defs>
+        <rect width="100%" height="100%" fill="url(#topo)"/>
+    </svg>
+    <div class="ember-layer" id="ember-layer"></div>
     <div class="overlay"></div>
 
     <div class="app">
         <!-- NAVBAR -->
-        <nav class="navbar glass">
+        <nav class="navbar">
             <div class="nav-brand">
-                <span class="nav-icon">&#127794;</span>
-                <span class="nav-title">ForestFire</span>
-                <span class="nav-tag">Save Our Forest</span>
+                <i data-lucide="trees" class="nav-icon"></i>
+                <span class="nav-title">Command Center</span>
+                <span class="nav-tag">ForestFire</span>
             </div>
             <div class="nav-links">
-                <button class="nav-btn active" data-section="dashboard">&#127968; Home</button>
-                <button class="nav-btn" data-section="trends">&#128202; Trends</button>
-                <button class="nav-btn" data-section="alerts">&#128680; Alerts</button>
-                <button class="nav-btn" data-section="ai">&#129704; AI</button>
-                <button class="nav-btn" data-section="hardware">&#128295; Hardware</button>
+                <button class="nav-btn active" data-section="dashboard"><i data-lucide="monitor" class="nav-icon-sm"></i> Dashboard</button>
+                <button class="nav-btn" data-section="trends"><i data-lucide="chart-line" class="nav-icon-sm"></i> Trends</button>
+                <button class="nav-btn" data-section="alerts"><i data-lucide="alert-triangle" class="nav-icon-sm"></i> Alerts</button>
+                <button class="nav-btn" data-section="ai"><i data-lucide="brain" class="nav-icon-sm"></i> AI</button>
+                <button class="nav-btn" data-section="hardware"><i data-lucide="cpu" class="nav-icon-sm"></i> Hardware</button>
             </div>
             <div class="nav-status">
                 <span class="live-dot" id="live-dot"></span>
@@ -35,7 +43,7 @@
         <!-- ALERT BANNER -->
         <div class="alert-banner" id="alert-banner" style="display:none;">
             <div class="alert-banner-content">
-                <span class="alert-icon">&#128293;</span>
+                <i data-lucide="flame" class="alert-icon"></i>
                 <span id="alert-banner-text">ALERT ACTIVE!</span>
                 <button class="alert-dismiss" id="alert-dismiss">&times;</button>
             </div>
@@ -46,110 +54,129 @@
 
             <!-- ====== DASHBOARD ====== -->
             <section class="section" id="sec-dashboard">
-                <!-- Save Forest Hero -->
-                <div class="hero glass">
+                <!-- Hero -->
+                <div class="hero">
                     <div class="hero-content">
-                        <h1>&#127794; Save Our Forest</h1>
-                        <p class="hero-sub">Every degree matters. Every tree counts. This system monitors forest conditions 24/7 to detect fire threats before they spread.</p>
+                        <div class="hero-badge"><i data-lucide="shield-check"></i> SYSTEM ACTIVE</div>
+                        <h1>Protect the Forest</h1>
+                        <p class="hero-sub">24/7 autonomous forest fire detection. Monitoring temperature, humidity, smoke, and flame threats in real-time. Every reading saves a tree.</p>
                         <div class="hero-stats">
                             <div class="hero-stat"><span class="hero-stat-num" id="stat-readings">0</span><span>Readings</span></div>
                             <div class="hero-stat"><span class="hero-stat-num" id="stat-alerts">0</span><span>Alerts</span></div>
-                            <div class="hero-stat"><span class="hero-stat-num">24/7</span><span>Monitoring</span></div>
-                            <div class="hero-stat"><span class="hero-stat-num" id="stat-trees">1</span><span>Trees Protected</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num">24/7</span><span>Uptime</span></div>
                         </div>
                     </div>
                     <div class="hero-visual">
-                        <div class="forest-icon">&#127794;</div>
-                        <div class="fire-indicator" id="fire-indicator">&#128299;</div>
+                        <div class="forest-silhouette">
+                            <div class="tree tree-1"></div>
+                            <div class="tree tree-2"></div>
+                            <div class="tree tree-3"></div>
+                        </div>
+                        <div class="fire-pulse" id="fire-pulse"></div>
                     </div>
                 </div>
 
-                <!-- Quick Sensor Cards -->
-                <h2>Live Readings</h2>
-                <div class="cards" id="dash-cards">
-                    <div class="card glass">
-                        <div class="card-icon">&#127794;</div>
-                        <div class="card-label">Temperature</div>
-                        <div class="card-value" id="val-temp">—</div>
-                        <div class="card-unit">°C</div>
-                        <div class="card-bar"><div class="card-bar-fill" id="bar-temp"></div></div>
-                        <div class="card-status" id="st-temp">—</div>
+                <!-- Bento-box Sensor Grid -->
+                <div class="sensor-grid">
+                    <div class="sensor-card glass" id="card-temp">
+                        <div class="sensor-card-header">
+                            <i data-lucide="thermometer" class="sensor-icon" style="color:#ff6b35"></i>
+                            <span class="sensor-label">Temperature</span>
+                        </div>
+                        <div class="sensor-value" id="val-temp">—</div>
+                        <div class="sensor-unit">°C</div>
+                        <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-temp"></div></div>
+                        <div class="sensor-status" id="st-temp">—</div>
                     </div>
-                    <div class="card glass">
-                        <div class="card-icon">&#127811;</div>
-                        <div class="card-label">Humidity</div>
-                        <div class="card-value" id="val-hum">—</div>
-                        <div class="card-unit">%</div>
-                        <div class="card-bar"><div class="card-bar-fill" id="bar-hum"></div></div>
-                        <div class="card-status" id="st-hum">—</div>
+                    <div class="sensor-card glass" id="card-hum">
+                        <div class="sensor-card-header">
+                            <i data-lucide="droplets" class="sensor-icon" style="color:#4a8c3f"></i>
+                            <span class="sensor-label">Humidity</span>
+                        </div>
+                        <div class="sensor-value" id="val-hum">—</div>
+                        <div class="sensor-unit">%</div>
+                        <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-hum"></div></div>
+                        <div class="sensor-status" id="st-hum">—</div>
                     </div>
-                    <div class="card glass">
-                        <div class="card-icon">&#128293;</div>
-                        <div class="card-label">Smoke ADC</div>
-                        <div class="card-value" id="val-smoke">—</div>
-                        <div class="card-unit">/1024</div>
-                        <div class="card-bar"><div class="card-bar-fill" id="bar-smoke"></div></div>
-                        <div class="card-status" id="st-smoke">—</div>
+                    <div class="sensor-card glass" id="card-smoke">
+                        <div class="sensor-card-header">
+                            <i data-lucide="cloud" class="sensor-icon" style="color:#ff9f1c"></i>
+                            <span class="sensor-label">Smoke ADC</span>
+                        </div>
+                        <div class="sensor-value" id="val-smoke">—</div>
+                        <div class="sensor-unit">/1024</div>
+                        <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-smoke"></div></div>
+                        <div class="sensor-status" id="st-smoke">—</div>
                     </div>
-                    <div class="card glass">
-                        <div class="card-icon">&#128299;</div>
-                        <div class="card-label">Heat Index</div>
-                        <div class="card-value" id="val-heat">—</div>
-                        <div class="card-unit">°C</div>
-                        <div class="card-bar"><div class="card-bar-fill" id="bar-heat"></div></div>
-                        <div class="card-status" id="st-heat">—</div>
+                    <div class="sensor-card glass" id="card-heat">
+                        <div class="sensor-card-header">
+                            <i data-lucide="sun" class="sensor-icon" style="color:#e63946"></i>
+                            <span class="sensor-label">Heat Index</span>
+                        </div>
+                        <div class="sensor-value" id="val-heat">—</div>
+                        <div class="sensor-unit">°C</div>
+                        <div class="sensor-bar"><div class="sensor-bar-fill" id="bar-heat"></div></div>
+                        <div class="sensor-status" id="st-heat">—</div>
                     </div>
-                    <div class="card glass">
-                        <div class="card-icon">&#128150;</div>
-                        <div class="card-label">Flame</div>
-                        <div class="card-value" id="val-flame">—</div>
-                        <div class="card-unit">Active LOW</div>
-                        <div class="card-status" id="st-flame">—</div>
+                    <div class="sensor-card glass" id="card-flame">
+                        <div class="sensor-card-header">
+                            <i data-lucide="flame" class="sensor-icon" style="color:#ff4444"></i>
+                            <span class="sensor-label">Flame</span>
+                        </div>
+                        <div class="sensor-value" id="val-flame">—</div>
+                        <div class="sensor-unit">Active LOW</div>
+                        <div class="sensor-status" id="st-flame">—</div>
                     </div>
-                    <div class="card glass">
-                        <div class="card-icon">&#9889;</div>
-                        <div class="card-label">WiFi</div>
-                        <div class="card-value" id="val-rssi">—</div>
-                        <div class="card-unit">dBm</div>
-                        <div class="card-status" id="st-rssi">—</div>
+                    <div class="sensor-card glass" id="card-wifi">
+                        <div class="sensor-card-header">
+                            <i data-lucide="wifi" class="sensor-icon" style="color:#8faa8a"></i>
+                            <span class="sensor-label">WiFi Signal</span>
+                        </div>
+                        <div class="sensor-value" id="val-rssi">—</div>
+                        <div class="sensor-unit">dBm</div>
+                        <div class="sensor-status" id="st-rssi">—</div>
                     </div>
                 </div>
 
                 <!-- Forest Health Meter -->
-                <h2>Forest Health</h2>
-                <div class="health-meter glass">
-                    <div class="health-label">Overall Forest Condition</div>
-                    <div class="health-bar"><div class="health-fill" id="health-fill"></div></div>
+                <div class="health-panel glass">
+                    <div class="health-panel-header">
+                        <i data-lucide="map-pin" class="health-icon"></i>
+                        <span>Forest Health Index</span>
+                    </div>
+                    <div class="health-bar-track"><div class="health-bar-fill" id="health-fill"></div></div>
                     <div class="health-label" id="health-text">Calculating...</div>
                 </div>
             </section>
 
-            <!-- ====== SENSOR TRENDS ====== -->
+            <!-- ====== TRENDS ====== -->
             <section class="section" id="sec-trends" style="display:none;">
-                <h2>Sensor Trends</h2>
+                <div class="section-header">
+                    <h2>Sensor Trends</h2>
+                </div>
                 <div class="trend-tabs">
-                    <button class="trend-tab active" data-chart="temp-hum">Temp &amp; Humidity</button>
-                    <button class="trend-tab" data-chart="smoke">Smoke ADC</button>
-                    <button class="trend-tab" data-chart="heat">Heat Index</button>
+                    <button class="trend-tab active" data-chart="temp-hum"><i data-lucide="thermometer" class="tab-icon"></i> Temp &amp; Humidity</button>
+                    <button class="trend-tab" data-chart="smoke"><i data-lucide="cloud" class="tab-icon"></i> Smoke ADC</button>
+                    <button class="trend-tab" data-chart="heat"><i data-lucide="sun" class="tab-icon"></i> Heat Index</button>
                 </div>
                 <div class="charts">
-                    <div class="chart-box glass" id="chart-box-temp-hum"><h3>Temperature &amp; Humidity</h3><canvas id="chart-temp-hum"></canvas></div>
-                    <div class="chart-box glass" id="chart-box-smoke" style="display:none;"><h3>Smoke ADC</h3><canvas id="chart-smoke"></canvas></div>
-                    <div class="chart-box glass" id="chart-box-heat" style="display:none;"><h3>Heat Index</h3><canvas id="chart-heat"></canvas></div>
+                    <div class="chart-card glass" id="chart-box-temp-hum"><h3>Temperature &amp; Humidity</h3><canvas id="chart-temp-hum"></canvas></div>
+                    <div class="chart-card glass" id="chart-box-smoke" style="display:none;"><h3>Smoke ADC</h3><canvas id="chart-smoke"></canvas></div>
+                    <div class="chart-card glass" id="chart-box-heat" style="display:none;"><h3>Heat Index</h3><canvas id="chart-heat"></canvas></div>
                 </div>
                 <div class="chart-info">
-                    <span>Showing last <strong id="chart-count">20</strong> readings</span>
-                    <span>Last update: <strong id="chart-updated">—</strong></span>
+                    <span>Last <strong id="chart-count">20</strong> readings</span>
+                    <span>Updated: <strong id="chart-updated">—</strong></span>
                 </div>
             </section>
 
             <!-- ====== ALERTS ====== -->
             <section class="section" id="sec-alerts" style="display:none;">
                 <div class="section-header">
-                    <h2>Alert History</h2>
+                    <h2>Alert Log</h2>
                     <span class="alert-count-badge" id="alert-count-badge">0</span>
                 </div>
-                <table class="comp-table">
+                <table class="alerts-table">
                     <thead>
                         <tr><th>#</th><th>Time</th><th>Type</th><th>Temp °C</th><th>Hum %</th><th>Smoke</th><th>Heat °C</th></tr>
                     </thead>
@@ -159,63 +186,62 @@
                 </table>
             </section>
 
-            <!-- ====== AI ASSISTANT ====== -->
+            <!-- ====== AI ====== -->
             <section class="section" id="sec-ai" style="display:none;">
-                <div class="ai-section-layout">
-                    <div class="ai-panel glass">
-                        <div class="ai-header">
-                            <h3>&#129704; AI Forest Analysis</h3>
-                            <button id="ai-close">&times;</button>
-                        </div>
-                        <p class="ai-desc">Get instant AI-powered insights on forest fire risk based on current sensor data.</p>
-                        <button class="ai-analyze-btn" id="ai-analyze">Analyze Current Data</button>
-                        <div class="ai-result" id="ai-result"></div>
+                <div class="ai-panel glass">
+                    <div class="ai-header">
+                        <div><h3>AI Forest Analysis</h3><p class="ai-desc">Instant insights on fire risk based on real-time sensor data.</p></div>
+                        <button id="ai-close">&times;</button>
                     </div>
+                    <button class="ai-analyze-btn" id="ai-analyze"><i data-lucide="sparkles"></i> Analyze Current Data</button>
+                    <div class="ai-result" id="ai-result"></div>
                 </div>
             </section>
 
-            <!-- ====== HARDWARE STATUS ====== -->
+            <!-- ====== HARDWARE ====== -->
             <section class="section" id="sec-hardware" style="display:none;">
-                <h2>Hardware Components</h2>
-                <p class="section-desc">Monitor the status of each sensor and actuator in the field node.</p>
+                <div class="section-header">
+                    <h2>Hardware Nodes</h2>
+                    <span class="section-desc">Field node component status</span>
+                </div>
                 <div class="hardware-grid">
                     <div class="hw-card glass" id="hw-dht">
-                        <div class="hw-icon">&#127794;</div>
+                        <div class="hw-icon"><i data-lucide="thermometer"></i></div>
                         <div class="hw-name">DHT11</div>
                         <div class="hw-pin">D2 / GPIO4</div>
                         <div class="hw-detail">Temp &amp; Humidity</div>
                         <div class="hw-status" id="hw-dht-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-mq2">
-                        <div class="hw-icon">&#128293;</div>
+                        <div class="hw-icon"><i data-lucide="cloud"></i></div>
                         <div class="hw-name">MQ-2</div>
                         <div class="hw-pin">A0</div>
                         <div class="hw-detail">Smoke Detection</div>
                         <div class="hw-status" id="hw-mq2-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-flame">
-                        <div class="hw-icon">&#128150;</div>
+                        <div class="hw-icon"><i data-lucide="flame"></i></div>
                         <div class="hw-name">IR Flame</div>
                         <div class="hw-pin">D1 / GPIO5</div>
                         <div class="hw-detail">Fire Detection</div>
                         <div class="hw-status" id="hw-flame-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-buzzer">
-                        <div class="hw-icon">&#128266;</div>
+                        <div class="hw-icon"><i data-lucide="volume-2"></i></div>
                         <div class="hw-name">Buzzer</div>
                         <div class="hw-pin">D5 / GPIO14</div>
                         <div class="hw-detail">Alert Sound</div>
                         <div class="hw-status" id="hw-buzzer-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-led">
-                        <div class="hw-icon">&#128302;</div>
+                        <div class="hw-icon"><i data-lucide="led-vertical"></i></div>
                         <div class="hw-name">LED</div>
                         <div class="hw-pin">D6 / GPIO12</div>
                         <div class="hw-detail">Visual Alert</div>
                         <div class="hw-status" id="hw-led-status">—</div>
                     </div>
                     <div class="hw-card glass" id="hw-wifi">
-                        <div class="hw-icon">&#9889;</div>
+                        <div class="hw-icon"><i data-lucide="wifi-off"></i></div>
                         <div class="hw-name">WiFi</div>
                         <div class="hw-pin">ESP8266</div>
                         <div class="hw-detail">Network Conn.</div>
@@ -226,9 +252,8 @@
 
         </main>
 
-        <!-- FOOTER -->
         <footer>
-            <p>&#127794; Forest Fire Detection System · Built to Protect Our Green Heritage · Every Reading Saves a Tree</p>
+            <p>Forest Fire Detection Command Center · Every Reading Saves a Tree</p>
         </footer>
     </div>
 
