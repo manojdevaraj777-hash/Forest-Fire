@@ -9,13 +9,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <svg class="topo-svg" xmlns="http://www.w3.org/2000/svg">
-        <defs><pattern id="topo" width="80" height="80" patternUnits="userSpaceOnUse">
-            <path d="M0 40 Q20 20 40 40 Q60 60 80 40" fill="none" stroke="rgba(74,140,63,0.06)" stroke-width="0.5"/>
-            <path d="M0 60 Q20 40 40 60 Q60 80 80 60" fill="none" stroke="rgba(74,140,63,0.04)" stroke-width="0.5"/>
-        </pattern></defs>
-        <rect width="100%" height="100%" fill="url(#topo)"/>
-    </svg>
     <div class="ember-layer" id="ember-layer"></div>
     <div class="overlay"></div>
 
@@ -23,20 +16,21 @@
         <!-- NAVBAR -->
         <nav class="navbar">
             <div class="nav-brand">
-                <i data-lucide="trees" class="nav-icon"></i>
-                <span class="nav-title">Command Center</span>
-                <span class="nav-tag">ForestFire</span>
+                <div class="flame-logo"></div>
+                <span class="nav-title">ForestFire</span>
+                <span class="nav-tag">Save Our Forest</span>
             </div>
             <div class="nav-links">
-                <button class="nav-btn active" data-section="dashboard"><i data-lucide="monitor" class="nav-icon-sm"></i> Dashboard</button>
+                <button class="nav-btn active" data-section="dashboard"><i data-lucide="home" class="nav-icon-sm"></i> Home</button>
                 <button class="nav-btn" data-section="trends"><i data-lucide="chart-line" class="nav-icon-sm"></i> Trends</button>
-                <button class="nav-btn" data-section="alerts"><i data-lucide="alert-triangle" class="nav-icon-sm"></i> Alerts</button>
+                <button class="nav-btn" data-section="alerts"><i data-lucide="alert-circle" class="nav-icon-sm"></i> Alerts <span class="alert-count-badge" id="nav-alert-badge">0</span></button>
                 <button class="nav-btn" data-section="ai"><i data-lucide="brain" class="nav-icon-sm"></i> AI</button>
                 <button class="nav-btn" data-section="hardware"><i data-lucide="cpu" class="nav-icon-sm"></i> Hardware</button>
             </div>
-            <div class="nav-status">
-                <span class="live-dot" id="live-dot"></span>
-                <span id="status-text">Monitoring</span>
+            <div class="nav-right">
+                <i data-lucide="search" class="nav-icon-sm"></i>
+                <i data-lucide="bell" class="nav-icon-sm"></i>
+                <i data-lucide="settings" class="nav-icon-sm"></i>
             </div>
         </nav>
 
@@ -61,9 +55,9 @@
                         <h1>Protect the Forest</h1>
                         <p class="hero-sub">24/7 autonomous forest fire detection. Monitoring temperature, humidity, smoke, and flame threats in real-time. Every reading saves a tree.</p>
                         <div class="hero-stats">
-                            <div class="hero-stat"><span class="hero-stat-num" id="stat-readings">0</span><span>Readings</span></div>
-                            <div class="hero-stat"><span class="hero-stat-num" id="stat-alerts">0</span><span>Alerts</span></div>
-                            <div class="hero-stat"><span class="hero-stat-num">24/7</span><span>Uptime</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num green" id="stat-readings">0</span><span>Readings</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num red" id="stat-alerts">0</span><span>Alerts</span></div>
+                            <div class="hero-stat"><span class="hero-stat-num blue">24/7</span><span>Uptime</span></div>
                         </div>
                     </div>
                     <div class="hero-visual">

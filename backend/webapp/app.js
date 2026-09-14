@@ -20,6 +20,12 @@ createEmbers();
 /* ===== LUCIDE ICONS ===== */
 lucide.createIcons();
 
+/* ===== SYNC NAV ALERT BADGE ===== */
+function syncNavBadge(count) {
+    const badge = $("#nav-alert-badge");
+    if (badge) badge.textContent = count;
+}
+
 /* ===== CHARTS ===== */
 const baseOpts = { responsive: true, animation: false, plugins: { legend: { labels: { color: "#6a9a6a", font: { size: 11 } } } }, scales: {} };
 const chartTempHum = new Chart($("#chart-temp-hum"), {
@@ -193,6 +199,7 @@ async function fetchAlerts() {
         const tbody = $("#alert-tbody");
         if (!data.length) { tbody.innerHTML = "<tr><td colspan='7'>No alerts yet</td></tr>"; $("#alert-count-badge").textContent = "0"; return; }
         $("#alert-count-badge").textContent = data.length;
+        syncNavBadge(data.length);
         tbody.innerHTML = data.map((a, i) =>
             `<tr><td>${i + 1}</td><td>${escHtml(a.received_at)}</td><td>${escHtml(a.alert_type.replace(/_/g,' ').toUpperCase())}</td>` +
             `<td>${a.temperature_c?.toFixed(1)??'-'}</td><td>${a.humidity_percent?.toFixed(1)??'-'}</td><td>${a.smoke_adc}</td><td>${a.heat_index_c?.toFixed(1)??'-'}</td></tr>`

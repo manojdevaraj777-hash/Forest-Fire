@@ -23,6 +23,9 @@ backend/pushbullet_config.json
 backend/gemini_config.json
 backend/forest_fire.db
 
+backend/webapp/*.jpg
+backend/webapp/*.png
+backend/webapp/*.jpeg
 # Web app build artifacts
 backend/webapp/*.map
 
