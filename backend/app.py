@@ -9,7 +9,7 @@ Endpoints:
     POST /api/reading          — receive sensor JSON from NodeMCU
     GET  /api/readings         — latest readings as JSON
     GET  /api/alerts           — recent alerts as JSON
-    GET  /api/ai/suggest       — AI analysis of latest sensor data
+    GET  /api/action/suggest   — Action plan based on latest sensor data
     GET  /                     — web app (dashboard)
 """
 
@@ -23,7 +23,6 @@ from flask import Flask, request, jsonify, g
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "forest_fire.db")
 PB_CONFIG_PATH = os.path.join(BASE_DIR, "pushbullet_config.json")
-GEMINI_CONFIG_PATH = os.path.join(BASE_DIR, "gemini_config.json")
 
 app = Flask(__name__, static_folder="webapp", static_url_path="")
 
@@ -36,7 +35,6 @@ def load_secret(path, key_name="access_token"):
         return ""
 
 PUSHBULLET_TOKEN = load_secret(PB_CONFIG_PATH)
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or load_secret(GEMINI_CONFIG_PATH, "api_key")
 
 _last_alert_state = {"high_temperature": False, "low_humidity": False,
                      "high_smoke": False, "flame_detected": False}
@@ -57,36 +55,55 @@ def send_pushbullet(title, body):
         return False
 
 
-def get_gemini_analysis(sensor_data):
-    if not GEMINI_API_KEY:
-        return None
-    try:
-        from google import genai
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        temp = sensor_data.get("temperature_c", "?")
-        hum = sensor_data.get("humidity_percent", "?")
-        hi = sensor_data.get("heat_index_c", "?")
-        smoke = sensor_data.get("smoke_adc", "?")
-        flame = sensor_data.get("flame_detected", "?")
-        alert = sensor_data.get("alert", False)
-        contents = (
-            f"Forest Fire Detection Sensor Data:\n"
-            f"- Temperature: {temp} °C\n"
-            f"- Humidity: {hum} %\n"
-            f"- Heat Index (feels-like): {hi} °C\n"
-            f"- Smoke ADC reading: {smoke} (0-1024)\n"
-            f"- Flame detected: {flame}\n"
-            f"- Alert active: {alert}\n\n"
-            f"Please respond with exactly this format:\n"
-            f"1. STATUS: one-line summary of current fire risk\n"
-            f"2. EXPLANATION: 2-3 sentences explaining what the data means\n"
-            f"3. ACTIONS: 5 numbered bullet points of suggested actions (e.g. check area, notify authorities, increase monitoring, verify sensor, etc.)\n"
-            f"Keep it concise and in English. Focus on practical next steps."
-        )
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=contents)
-        return response.text
-    except Exception as e:
-        return f"[AI error] {e}"
+def get_action_plan(sensor_data):
+    temp = sensor_data.get("temperature_c") or 0
+    hum = sensor_data.get("humidity_percent") or 100
+    smoke = sensor_data.get("smoke_adc") or 0
+    flame = sensor_data.get("flame_detected") or False
+    
+    status = "NORMAL: No immediate fire risk detected."
+    explanation = "Sensor readings are within normal operational limits."
+    actions = [
+        "Continue routine monitoring.",
+        "Ensure sensors are clear of debris.",
+        "Verify system power and connectivity."
+    ]
+
+    if flame:
+        status = "CRITICAL: Open flame detected!"
+        explanation = "The IR Flame sensor has detected an active fire source in the immediate vicinity."
+        actions = [
+            "IMMEDIATELY evacuate the area.",
+            "Contact local fire emergency services (e.g., 911).",
+            "Do not attempt to extinguish if the fire is large.",
+            "Activate secondary site alarms.",
+            "Review camera feeds if available."
+        ]
+    elif temp > 45 or smoke > 400:
+        status = "WARNING: High risk of fire or active smoldering."
+        explanation = f"Elevated levels detected. Temperature is {temp}°C, Smoke ADC is {smoke}."
+        actions = [
+            "Dispatch a scout or drone to inspect the location.",
+            "Prepare fire suppression equipment.",
+            "Alert local response teams of a potential hazard.",
+            "Monitor wind direction to predict spread.",
+            "Verify if these readings are caused by controlled burns."
+        ]
+    elif temp > 35 and hum < 30:
+        status = "ELEVATED RISK: Dry and hot conditions."
+        explanation = "The environment is highly susceptible to ignition."
+        actions = [
+            "Increase monitoring frequency.",
+            "Restrict access to high-risk areas.",
+            "Check equipment for potential overheating.",
+            "Ensure emergency water reserves are full."
+        ]
+        
+    return (
+        f"1. STATUS: {status}\n"
+        f"2. EXPLANATION: {explanation}\n"
+        f"3. ACTIONS:\n" + "\n".join(f"   - {a}" for a in actions)
+    )
 
 
 def get_db():
@@ -134,8 +151,15 @@ def init_db():
             alert_type        TEXT NOT NULL,
             temperature_c     REAL,
             humidity_percent  REAL,
+            heat_index_c      REAL,
             smoke_adc         INTEGER,
-            flame_detected    INTEGER
+            flame_detected    INTEGER,
+            wifi_rssi_db      INTEGER,
+            uptime_ms         INTEGER,
+            high_temperature  INTEGER DEFAULT 0,
+            low_humidity      INTEGER DEFAULT 0,
+            high_smoke        INTEGER DEFAULT 0,
+            flame_alert       INTEGER DEFAULT 0
         );
         """
     )
@@ -144,6 +168,11 @@ def init_db():
     for col in ["buzzer_active", "led_active"]:
         try:
             db.execute(f"ALTER TABLE readings ADD COLUMN {col} INTEGER DEFAULT 0")
+        except Exception:
+            pass  # Column already exists
+    for col in ["heat_index_c", "wifi_rssi_db", "uptime_ms", "high_temperature", "low_humidity", "high_smoke", "flame_alert"]:
+        try:
+            db.execute(f"ALTER TABLE alerts ADD COLUMN {col} REAL" if col in ["heat_index_c", "wifi_rssi_db", "uptime_ms"] else f"ALTER TABLE alerts ADD COLUMN {col} INTEGER DEFAULT 0")
         except Exception:
             pass  # Column already exists
     db.commit()
@@ -187,10 +216,16 @@ def receive_reading():
             send_pushbullet(title, body)
             db = get_db()
             db.execute(
-                "INSERT INTO alerts (received_at, device_id, alert_type, temperature_c, humidity_percent, smoke_adc, flame_detected) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO alerts (received_at, device_id, alert_type, temperature_c, humidity_percent, heat_index_c, smoke_adc, flame_detected, wifi_rssi_db, uptime_ms, high_temperature, low_humidity, high_smoke, flame_alert) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (received_at, payload.get("device_id", "unknown"), atype,
                  readings.get("temperature_c"), readings.get("humidity_percent"),
-                 readings.get("smoke_adc"), 1 if readings.get("flame_detected") else 0)
+                 readings.get("heat_index_c"), readings.get("smoke_adc"),
+                 1 if readings.get("flame_detected") else 0,
+                 payload.get("wifi_rssi_db"), payload.get("uptime_ms"),
+                 1 if triggers.get("high_temperature") else 0,
+                 1 if triggers.get("low_humidity") else 0,
+                 1 if triggers.get("high_smoke") else 0,
+                 1 if triggers.get("flame_detected") else 0)
             )
             db.commit()
 
@@ -233,8 +268,8 @@ def get_alerts():
     return jsonify([dict(r) for r in rows])
 
 
-@app.route("/api/ai/suggest")
-def ai_suggest():
+@app.route("/api/action/suggest")
+def action_suggest():
     rows = get_db().execute("SELECT * FROM readings ORDER BY id DESC LIMIT 1").fetchall()
     if not rows:
         return jsonify({"error": "no data"}), 404
@@ -247,7 +282,7 @@ def ai_suggest():
         "flame_detected": bool(r["flame_detected"]),
         "alert": bool(r["alert"])
     }
-    analysis = get_gemini_analysis(sensor_data)
+    analysis = get_action_plan(sensor_data)
     return jsonify({"analysis": analysis, "sensor_data": sensor_data})
 
 
@@ -261,7 +296,7 @@ if __name__ == "__main__":
     print(f"  Dashboard:  http://{host}:5000/")
     print(f"  POST here:  http://{host}:5000/api/reading")
     print(f"  Pushbullet: {'ON' if PUSHBULLET_TOKEN else 'OFF'}")
-    print(f"  Gemini AI:  {'ON' if GEMINI_API_KEY else 'OFF'}")
+    print(f"  Action Plan: ON")
     print("=" * 55)
     print()
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)

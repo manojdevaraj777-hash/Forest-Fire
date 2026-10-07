@@ -1,283 +1,158 @@
 const POLL_MS = 3000;
 const $ = (s) => document.querySelector(s);
 
-/* Serial Console */
-const consoleLines = [];
-function addConsoleLine(msg, type = 'system') {
-    const time = new Date().toLocaleTimeString();
-    const line = `[${time}] ${msg}`;
-    consoleLines.unshift({ text: line, type });
-    if (consoleLines.length > 50) consoleLines.pop();
-    const body = $("#console-body");
-    if (body) {
-        body.innerHTML = consoleLines.map(c =>
-            `<div class="console-line ${c.type}">${escHtml(c.text)}</div>`
-        ).join('');
-    }
-}
-function escHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-
-/* ===== EMBER PARTICLES ===== */
-function createEmbers() {
-    const layer = $("#ember-layer");
-    for (let i = 0; i < 30; i++) {
-        const e = document.createElement("div");
-        e.className = "ember";
-        e.style.left = Math.random() * 100 + "%";
-        e.style.animationDuration = (3 + Math.random() * 5) + "s";
-        e.style.animationDelay = Math.random() * 5 + "s";
-        e.style.width = (2 + Math.random() * 3) + "px";
-        e.style.height = e.style.width;
-        layer.appendChild(e);
-    }
-}
-createEmbers();
-
-/* ===== LUCIDE ICONS ===== */
 lucide.createIcons();
 
-/* ===== SYNC NAV ALERT BADGE ===== */
-function syncNavBadge(count) {
-    const badge = $("#nav-alert-badge");
-    if (badge) badge.textContent = count;
+const terminal = document.getElementById('serial-output');
+function getTime() {
+    const now = new Date();
+    return `[${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`;
 }
 
-/* ===== CHARTS ===== */
-const baseOpts = { responsive: true, animation: false, plugins: { legend: { labels: { color: "#6a9a6a", font: { size: 11 } } } }, scales: {} };
-const chartTempHum = new Chart($("#chart-temp-hum"), {
-    type: "line", data: { labels: [], datasets: [
-        { label: "Temp °C", data: [], borderColor: "#ff6b35", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#ff6b35", borderWidth: 2, fill: false },
-        { label: "Hum %", data: [], borderColor: "#4a8c3f", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#4a8c3f", borderWidth: 2, fill: false, yAxisID: "y1" },
-    ]},
-    options: { ...baseOpts, scales: { x: { display: false }, y: { beginAtZero: true, position: "left" }, y1: { position: "right", beginAtZero: true, grid: { drawOnChartArea: false } } } },
-});
-const chartSmoke = new Chart($("#chart-smoke"), {
-    type: "line", data: { labels: [], datasets: [{ label: "Smoke ADC", data: [], borderColor: "#ff9f1c", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#ff9f1c", fill: true, backgroundColor: "rgba(255,159,28,0.06)", borderWidth: 2 }] },
-    options: { ...baseOpts, scales: { x: { display: false }, y: { beginAtZero: true, max: 1024 } } },
-});
-const chartHeat = new Chart($("#chart-heat"), {
-    type: "line", data: { labels: [], datasets: [{ label: "Heat Index °C", data: [], borderColor: "#e63946", tension: 0.4, pointRadius: 3, pointBackgroundColor: "#e63946", fill: true, backgroundColor: "rgba(230,57,70,0.06)", borderWidth: 2 }] },
-    options: { ...baseOpts, scales: { x: { display: false }, y: { beginAtZero: true } } },
-});
-let tempBuf = [], humBuf = [], smokeBuf = [], heatBuf = [], labelsBuf = [];
+function addLog(msg, type="info") {
+    if (!terminal) return;
+    const div = document.createElement('div');
+    let textColor = "text-slate-300/80";
+    if(type === "data") textColor = "text-blue-300/80";
+    if(type === "warn") textColor = "text-amber-400/90";
+    if(type === "alert") textColor = "text-red-400/90";
+    
+    div.className = `${textColor} flex gap-4 opacity-0 transition-opacity duration-300`;
+    div.innerHTML = `<span class="w-24 shrink-0 opacity-50">${getTime()}</span><span>${msg}</span>`;
+    
+    terminal.appendChild(div);
+    requestAnimationFrame(() => { div.classList.remove('opacity-0'); });
 
-function escHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-
-function updateCharts(data) {
-    if (!data.length) return;
-    const r = data[0];
-    labelsBuf.unshift(new Date(r.received_at).toLocaleTimeString());
-    tempBuf.unshift(r.temperature_c ?? null); humBuf.unshift(r.humidity_percent ?? null);
-    smokeBuf.unshift(r.smoke_adc ?? null); heatBuf.unshift(r.heat_index_c ?? null);
-    while (labelsBuf.length > 20) { labelsBuf.pop(); tempBuf.pop(); humBuf.pop(); smokeBuf.pop(); heatBuf.pop(); }
-    chartTempHum.data.labels = labelsBuf; chartTempHum.data.datasets[0].data = tempBuf; chartTempHum.data.datasets[1].data = humBuf; chartTempHum.update();
-    chartSmoke.data.labels = labelsBuf; chartSmoke.data.datasets[0].data = smokeBuf; chartSmoke.update();
-    chartHeat.data.labels = labelsBuf; chartHeat.data.datasets[0].data = heatBuf; chartHeat.update();
-    $("#chart-count").textContent = labelsBuf.length;
-    $("#chart-updated").textContent = new Date().toLocaleTimeString();
+    terminal.scrollTop = terminal.scrollHeight;
+    if(terminal.children.length > 40) {
+        terminal.removeChild(terminal.firstChild);
+    }
 }
 
-/* ===== HELPERS ===== */
-function setBar(id, val, max) { const el = $(id); if (!el) return; el.style.width = Math.min(100, (val / max) * 100) + "%"; }
-function setCritical(cardId, isCritical) { const card = $(cardId); if (!card) return; if (isCritical) card.classList.add("critical"); else card.classList.remove("critical"); }
+// Chart Setup
+const ctx = document.getElementById('tempChart');
+let tempChart = null;
+let tempData = [];
+let tempLabels = [];
+const MAX_DATA_POINTS = 30;
 
-/* ===== NAVIGATION ===== */
-document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        const sec = btn.dataset.section;
-        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        document.querySelectorAll(".section").forEach(s => s.style.display = "none");
-        $(`#sec-${sec}`).style.display = "";
+if (ctx) {
+    const cctx = ctx.getContext('2d');
+    const gradient = cctx.createLinearGradient(0, 0, 0, 150);
+    gradient.addColorStop(0, 'rgba(249, 115, 22, 0.4)');
+    gradient.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
+
+    tempLabels = Array(MAX_DATA_POINTS).fill('');
+    tempData = Array(MAX_DATA_POINTS).fill(null);
+
+    tempChart = new Chart(cctx, {
+        type: 'line',
+        data: {
+            labels: tempLabels,
+            datasets: [{
+                label: 'Temperature °C',
+                data: tempData,
+                borderColor: '#f97316', 
+                backgroundColor: gradient,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHitRadius: 10,
+                fill: true,
+                tension: 0.4 
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 }, 
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+                x: { display: false },
+                y: { display: true, min: 10, max: 50, grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false }, ticks: { color: '#94a3b8', maxTicksLimit: 5, font: { family: 'Inter', size: 10 } } }
+            }
+        }
     });
-});
+}
 
-/* ===== TREND TABS ===== */
-document.querySelectorAll(".trend-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-        const chart = tab.dataset.chart;
-        document.querySelectorAll(".trend-tab").forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        ["temp-hum", "smoke", "heat"].forEach(c => {
-            $(`#chart-box-${c}`).style.display = c === chart ? "" : "none";
-        });
-    });
-});
+function updateUI(r) {
+    const elTemp = $("#val-temp-current");
+    const elHum = $("#val-hum");
+    const elSmoke = $("#val-smoke");
+    const elWifi = $("#val-wifi");
+    
+    const barHum = $("#bar-hum");
+    const barSmoke = $("#bar-smoke");
+    const barWifi = $("#bar-wifi");
 
-/* ===== ALERT BANNER ===== */
-$("#alert-dismiss").addEventListener("click", () => { $("#alert-banner").style.display = "none"; });
+    if (r.temperature_c != null) {
+        if (elTemp) elTemp.textContent = r.temperature_c.toFixed(1);
+        if (tempChart) {
+            tempData.push(r.temperature_c);
+            tempData.shift();
+            tempChart.update();
+        }
+    }
+    
+    if (r.humidity_percent != null && elHum) {
+        elHum.textContent = r.humidity_percent.toFixed(1);
+        if (barHum) barHum.style.width = Math.min(100, Math.max(0, r.humidity_percent)) + '%';
+    }
+    
+    if (r.smoke_adc != null && elSmoke) {
+        elSmoke.textContent = r.smoke_adc;
+        if (barSmoke) {
+            let pSmoke = (r.smoke_adc / 1024) * 100;
+            barSmoke.style.width = Math.min(100, Math.max(0, pSmoke)) + '%';
+            barSmoke.style.backgroundColor = r.smoke_adc > 400 ? 'var(--accent-red)' : (r.smoke_adc > 250 ? 'var(--accent-amber)' : 'var(--text-muted)');
+        }
+    }
 
-/* ===== FETCH & UPDATE ===== */
+    if (r.wifi_rssi_db != null && elWifi) {
+        elWifi.textContent = r.wifi_rssi_db;
+        if (barWifi) {
+            let pWifi = 100 - ((Math.abs(r.wifi_rssi_db) - 30) / 70) * 100;
+            barWifi.style.width = Math.min(100, Math.max(0, pWifi)) + '%';
+        }
+    }
+
+    const flameDot = $("#val-flame-dot");
+    const flameText = $("#val-flame-text");
+    const flameBar = $("#bar-flame");
+    
+    if (flameDot && flameText && flameBar) {
+        if (r.flame_detected) {
+            flameDot.className = "w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]";
+            flameText.className = "text-2xl font-medium tracking-tight text-red-400";
+            flameText.textContent = "DETECTED";
+            flameBar.className = "metric-fill bg-red-500";
+        } else {
+            flameDot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]";
+            flameText.className = "text-2xl font-medium tracking-tight text-emerald-400";
+            flameText.textContent = "NORMAL";
+            flameBar.className = "metric-fill bg-emerald-500";
+        }
+    }
+
+    // Console logs
+    const isAlert = r.alert === 1;
+    if (isAlert) {
+        addLog(`[ALERT] High risk anomaly detected!`, 'alert');
+    } else {
+        if (Math.random() < 0.3) {
+            addLog(`Telemetry sync: T=${r.temperature_c ?? '?'} H=${r.humidity_percent ?? '?'} S=${r.smoke_adc ?? '?'}`, 'data');
+        }
+    }
+}
+
 async function fetchReadings() {
     try {
         const res = await fetch("/api/readings");
         const data = await res.json();
         if (!data.length) return;
-        const r = data[0];
-
-        /* Sensor values */
-        $("#val-temp").textContent = r.temperature_c != null ? r.temperature_c.toFixed(1) : "—";
-        $("#val-hum").textContent = r.humidity_percent != null ? r.humidity_percent.toFixed(1) : "—";
-        $("#val-smoke").textContent = r.smoke_adc != null ? r.smoke_adc : "—";
-        $("#val-heat").textContent = r.heat_index_c != null ? r.heat_index_c.toFixed(1) : "—";
-        $("#val-flame").textContent = r.flame_detected ? "🔴 YES" : "🟢 NO";
-        $("#val-rssi").textContent = r.wifi_rssi_db != null ? r.wifi_rssi_db : "—";
-        setBar("#bar-temp", Math.max(0, r.temperature_c ?? 0), 60);
-        setBar("#bar-hum", Math.max(0, r.humidity_percent ?? 0), 100);
-        setBar("#bar-smoke", Math.max(0, r.smoke_adc ?? 0), 1024);
-        setBar("#bar-heat", Math.max(0, r.heat_index_c ?? 0), 60);
-
-        /* Contextual card colors */
-        const tempCritical = r.temperature_c != null && r.temperature_c > 45;
-        const smokeCritical = r.smoke_adc != null && r.smoke_adc > 400;
-        const heatCritical = r.heat_index_c != null && r.heat_index_c > 52;
-        setCritical("#card-temp", tempCritical);
-        setCritical("#card-smoke", smokeCritical);
-        setCritical("#card-heat", heatCritical);
-        if (tempCritical) { $("#card-temp").style.borderColor = "rgba(255,68,34,0.4)"; } else { $("#card-temp").style.borderColor = ""; }
-        if (smokeCritical) { $("#card-smoke").style.borderColor = "rgba(255,159,28,0.4)"; } else { $("#card-smoke").style.borderColor = ""; }
-        if (heatCritical) { $("#card-heat").style.borderColor = "rgba(230,57,70,0.4)"; } else { $("#card-heat").style.borderColor = ""; }
-
-        /* Status badges */
-        $("#st-temp").className = tempCritical ? "sensor-status status-alert" : "sensor-status status-ok";
-        $("#st-temp").textContent = tempCritical ? "⚠ ALERT" : "OK";
-        $("#st-hum").className = (r.humidity_percent != null && r.humidity_percent < 20) ? "sensor-status status-watch" : "sensor-status status-ok";
-        $("#st-hum").textContent = (r.humidity_percent != null && r.humidity_percent < 20) ? "LOW" : "OK";
-        $("#st-smoke").className = smokeCritical ? "sensor-status status-alert" : "sensor-status status-ok";
-        $("#st-smoke").textContent = smokeCritical ? "⚠ ALERT" : "OK";
-        $("#st-heat").className = heatCritical ? "sensor-status status-alert" : "sensor-status status-ok";
-        $("#st-heat").textContent = heatCritical ? "⚠ ALERT" : "OK";
-        $("#st-flame").className = r.flame_detected ? "sensor-status status-alert" : "sensor-status status-ok";
-        $("#st-flame").textContent = r.flame_detected ? "🔴 DETECTED" : "🟢 NORMAL";
-        $("#st-rssi").className = r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "sensor-status status-watch" : "sensor-status status-ok";
-        $("#st-rssi").textContent = r.wifi_rssi_db != null && r.wifi_rssi_db < -70 ? "WEAK" : "OK";
-
-        /* Alert banner */
-        if (r.alert) {
-            $("#alert-banner").style.display = "flex";
-            const trig = r.alert_triggers || {};
-            const msg = trig.high_smoke ? "HIGH SMOKE DETECTED" : trig.flame_detected ? "FLAME DETECTED" : trig.high_temperature ? "HIGH TEMP" : "ALERT ACTIVE";
-            $("#alert-banner-text").textContent = "⚠ " + msg;
-            $("#live-dot").style.background = "var(--ember)";
-            $("#live-dot").style.animation = "none";
-            $("#live-dot").offsetHeight;
-            $("#live-dot").style.animation = "pulseRed 1s infinite";
-            $("#status-text").textContent = "⚠ ALERT"; $("#status-text").style.color = "var(--ember)";
-        } else {
-            $("#alert-banner").style.display = "none";
-            $("#live-dot").style.background = "var(--forest-glow)";
-            $("#live-dot").style.animation = "";
-            $("#status-text").textContent = "All Clear — Monitoring"; $("#status-text").style.color = "var(--text-muted)";
-        }
-
-        /* Hardware status */
-        const dhtOk = r.temperature_c != null && !isNaN(r.temperature_c);
-        const mq2Ok = r.smoke_adc != null;
-        const flameOk = r.flame_detected != null;
-        const wifiOk = r.wifi_rssi_db != null;
-        const buzzerOk = r.buzzer_active === 1 || r.alert === 1;
-        const ledOk = r.led_active === 1 || r.alert === 1;
-        $("#hw-dht-status").className = dhtOk ? "hw-status status-ok" : "hw-status status-alert";
-        $("#hw-dht-status").textContent = dhtOk ? "✅ Working" : "❌ FAIL";
-        $("#hw-mq2-status").className = mq2Ok ? "hw-status status-ok" : "hw-status status-alert";
-        $("#hw-mq2-status").textContent = mq2Ok ? "✅ Working" : "❌ FAIL";
-        $("#hw-flame-status").className = flameOk ? "hw-status status-ok" : "hw-status status-alert";
-        $("#hw-flame-status").textContent = flameOk ? "✅ Working" : "❌ FAIL";
-        $("#hw-buzzer-status").className = buzzerOk ? "hw-status status-ok" : "hw-status status-alert";
-        $("#hw-buzzer-status").textContent = buzzerOk ? (r.alert ? "🔊 Active" : "✅ Standby") : "❌ FAIL";
-        $("#hw-led-status").className = ledOk ? "hw-status status-ok" : "hw-status status-alert";
-        $("#hw-led-status").textContent = ledOk ? (r.alert ? "💡 Blinking" : "✅ Standby") : "❌ FAIL";
-        $("#hw-wifi-status").className = wifiOk ? "hw-status status-ok" : "hw-status status-alert";
-        $("#hw-wifi-status").textContent = wifiOk ? (r.wifi_rssi_db < -70 ? "⚠ Weak" : "✅ Connected") : "❌ FAIL";
-
-        /* Health meter */
-        let health = 100;
-        if (r.temperature_c > 45) health -= 30;
-        if (r.humidity_percent < 20) health -= 20;
-        if (r.smoke_adc > 400) health -= 30;
-        if (r.flame_detected) health = 0;
-        if (r.wifi_rssi_db != null && r.wifi_rssi_db < -70) health -= 10;
-        health = Math.max(0, Math.min(100, health));
-        $("#health-fill").style.width = health + "%";
-        if (health > 70) { $("#health-fill").style.background = "linear-gradient(90deg, var(--forest-glow), var(--forest-light))"; $("#health-text").textContent = "🌿 Healthy"; }
-        else if (health > 40) { $("#health-fill").style.background = "linear-gradient(90deg, var(--fire-glow), var(--fire-orange))"; $("#health-text").textContent = "⚠ At Risk"; }
-        else { $("#health-fill").style.background = "linear-gradient(90deg, var(--fire-red), #ff4422)"; $("#health-text").textContent = "🔴 Critical"; }
-
-        /* Serial Console Messages */
-        const t = r.temperature_c != null ? r.temperature_c.toFixed(1) : '?';
-        const h = r.humidity_percent != null ? r.humidity_percent.toFixed(1) : '?';
-        const hi = r.heat_index_c != null ? r.heat_index_c.toFixed(1) : '?';
-        const s = r.smoke_adc != null ? r.smoke_adc : '?';
-        const f = r.flame_detected ? 'DETECTED!' : 'NORMAL';
-        const rss = r.wifi_rssi_db != null ? r.wifi_rssi_db : '?';
-        const u = r.uptime_ms != null ? Math.floor(r.uptime_ms / 1000) : 0;
-        const isAlert = r.alert === 1;
-
-        addConsoleLine(`[TELEMETRY] Temp: ${t}°C | HeatIdx: ${hi}°C | Humidity: ${h}% | Smoke ADC: ${s} | Flame: ${f}`, 'telemetry');
-        addConsoleLine(`[WIFI] RSSI: ${rss} dBm | Uptime: ${u}s`, 'info');
-        addConsoleLine(`[HEARTBEAT] Device: ${r.device_id || 'nodemcu_forest_node_01'} | Buzzer: ${r.buzzer_active ? 'ON' : 'OFF'} | LED: ${r.led_active ? 'ON' : 'OFF'}`, 'system');
-        if (isAlert) {
-            const trig = r.alert_triggers || {};
-            const reasons = [];
-            if (trig.high_temperature) reasons.push('HIGH_TEMP');
-            if (trig.low_humidity) reasons.push('LOW_HUMIDITY');
-            if (trig.high_smoke) reasons.push('HIGH_SMOKE');
-            if (trig.flame_detected) reasons.push('FLAME_DETECTED');
-            addConsoleLine(`[ALERT] Reasons: ${reasons.join(' ')}`, 'alert');
-        }
-        addConsoleLine(`[STATUS] ${isAlert ? '⚠ ALERT ACTIVE' : 'All Clear — Environment Normal.'}`, isAlert ? 'alert' : 'system');
-
-        /* Charts */
-        updateCharts(data);
-
-        /* Stats */
-        $("#stat-readings").textContent = data.length;
-
-    } catch (e) { console.error(e); }
+        updateUI(data[0]);
+    } catch (e) { console.error("Fetch error:", e); }
 }
 
-async function fetchAlerts() {
-    try {
-        const res = await fetch("/api/alerts");
-        const data = await res.json();
-        const tbody = $("#alert-tbody");
-        if (!data.length) { tbody.innerHTML = "<tr><td colspan='7'>No alerts yet</td></tr>"; $("#alert-count-badge").textContent = "0"; return; }
-        $("#alert-count-badge").textContent = data.length;
-        syncNavBadge(data.length);
-        tbody.innerHTML = data.map((a, i) =>
-            `<tr><td>${i + 1}</td><td>${escHtml(a.received_at)}</td><td>${escHtml(a.alert_type.replace(/_/g,' ').toUpperCase())}</td>` +
-            `<td>${a.temperature_c?.toFixed(1)??'-'}</td><td>${a.humidity_percent?.toFixed(1)??'-'}</td><td>${a.smoke_adc}</td><td>${a.heat_index_c?.toFixed(1)??'-'}</td></tr>`
-        ).join("");
-    } catch (e) { console.error(e); }
-}
-
-/* ===== AI ===== */
-const aiResult = $("#ai-result");
-$("#ai-analyze").addEventListener("click", async () => {
-    aiResult.innerHTML = '<p class="ai-hint">🌿 Analyzing forest data with Gemini AI...</p>';
-    try {
-        const res = await fetch("/api/ai/suggest");
-        const data = await res.json();
-        if (data.analysis) { aiResult.innerHTML = `<pre class="ai-output">${escHtml(data.analysis)}</pre>`; }
-        else { aiResult.innerHTML = '<p class="ai-error">No AI response. Check Gemini config.</p>'; }
-    } catch (e) { aiResult.innerHTML = `<p class="ai-error">Error: ${escHtml(e.message)}</p>`; }
-});
-
-/* ===== POLLING ===== */
-addConsoleLine("ForestFire Detection System v2.0", 'system');
-addConsoleLine("NodeMCU ESP8266 initialized...", 'system');
-addConsoleLine("DHT11 warming up...", 'system');
-addConsoleLine("MQ-2 heater warming up (60s)...", 'system');
-addConsoleLine("WiFi connected", 'info');
-addConsoleLine("Ready — monitoring forest conditions 24/7", 'info');
-
-/* Keep Render awake (free tier sleeps after 15 min idle) */
-setInterval(() => { fetch('/api/readings').catch(() => {}); }, 9 * 60 * 1000);
+addLog("Forest Guard System Initialized", "info");
 setInterval(fetchReadings, POLL_MS);
-setInterval(fetchAlerts, 15000);
-fetchReadings(); fetchAlerts();
-
-/* ===== ADDITIONAL KEYFRAME for red pulse dot ===== */
-const style = document.createElement("style");
-style.textContent = `@keyframes pulseRed { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,34,0.6); } 50% { box-shadow: 0 0 0 6px rgba(255,68,34,0); } }`;
-document.head.appendChild(style);
+fetchReadings();

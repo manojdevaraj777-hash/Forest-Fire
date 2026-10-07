@@ -13,8 +13,6 @@ services:
     healthCheckPath: /api/readings
     autoAssignDomain: true
     envVars:
-      - key: GEMINI_API_KEY
-        fromGitProvider: true
       - key: PUSHBULLET_TOKEN
     cronJobs:
       - schedule: "*/14 * * * *"
