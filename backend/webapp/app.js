@@ -74,6 +74,44 @@ if (ctx) {
     });
 }
 
+const bctx = document.getElementById('bigTempChart');
+let bigTempChart = null;
+if (bctx) {
+    const bigCtx = bctx.getContext('2d');
+    const bigGradient = bigCtx.createLinearGradient(0, 0, 0, 300);
+    bigGradient.addColorStop(0, 'rgba(52, 211, 153, 0.4)');
+    bigGradient.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
+
+    bigTempChart = new Chart(bigCtx, {
+        type: 'line',
+        data: {
+            labels: tempLabels,
+            datasets: [{
+                label: 'Temperature °C',
+                data: tempData,
+                borderColor: '#34d399', 
+                backgroundColor: bigGradient,
+                borderWidth: 2,
+                pointRadius: 3,
+                fill: true,
+                tension: 0.4 
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            plugins: { 
+                legend: { display: true, labels: { color: '#94a3b8'} }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: true, min: 10, max: 50, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
+            }
+        }
+    });
+}
+
 function updateUI(r) {
     const elTemp = $("#val-temp-current");
     const elHum = $("#val-hum");
@@ -90,6 +128,7 @@ function updateUI(r) {
             tempData.push(r.temperature_c);
             tempData.shift();
             tempChart.update();
+            if (bigTempChart) bigTempChart.update();
         }
     }
     
@@ -142,6 +181,9 @@ function updateUI(r) {
             addLog(`Telemetry sync: T=${r.temperature_c ?? '?'} H=${r.humidity_percent ?? '?'} S=${r.smoke_adc ?? '?'}`, 'data');
         }
     }
+
+    const hwUptime = $("#hw-uptime");
+    if(hwUptime) hwUptime.textContent = getTime();
 }
 
 async function fetchReadings() {
