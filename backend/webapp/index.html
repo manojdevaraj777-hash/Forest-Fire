@@ -3,57 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forest Guard | Environmental Monitoring</title>
+    <title>Forest Guard | Environmental Monitoring & Wildfire Early Warning</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
-            --glass-bg: rgba(20, 28, 22, 0.55);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-header: rgba(15, 20, 16, 0.85);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
+            /* Crystal Clear High Brightness Glassmorphism */
+            --glass-bg: rgba(12, 28, 20, 0.32);
+            --glass-border: rgba(255, 255, 255, 0.22);
+            --glass-header: rgba(14, 32, 22, 0.45);
+            --text-main: #ffffff;
+            --text-muted: #e2e8f0;
             --accent-green: #34d399;
-            --accent-amber: #fbbf24;
-            --accent-red: #ef4444;
+            --accent-emerald: #10b981;
+            --accent-amber: #fde047;
+            --accent-orange: #fb923c;
+            --accent-red: #f87171;
+            --accent-cyan: #38bdf8;
+            --accent-purple: #c084fc;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
         }
 
         body {
-            /* Realistic forest background */
-            background-image: url('https://images.unsplash.com/photo-1448375240586-882707db888b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
             min-height: 100vh;
+            background-color: #06120b;
         }
 
-        /* Ambient dark overlay to ensure text contrast */
+        /* Realistic Inside-Forest Background Layer (User Provided Image - Clean) */
+        .bg-backdrop {
+            position: fixed;
+            inset: 0;
+            background-image: url('/images/user_forest_bg_hd.jpg?v=2');
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            filter: brightness(0.96) contrast(1.05) saturate(1.1);
+            z-index: -2;
+        }
+
+        /* Subtle Ambient Depth Overlay */
         .ambient-overlay {
             position: fixed;
             inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(10,15,10,0.7) 100%);
-            z-index: 0;
+            background: 
+                radial-gradient(circle at 50% 15%, rgba(255, 255, 255, 0.05) 0%, transparent 60%),
+                linear-gradient(180deg, rgba(4, 10, 7, 0.18) 0%, rgba(6, 14, 9, 0.38) 100%);
+            z-index: -1;
             pointer-events: none;
         }
 
-        /* Glass Panel Class */
+        /* Highly Translucent Crystal Glass Panels */
         .glass-panel {
             background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(8px) saturate(160%);
+            -webkit-backdrop-filter: blur(8px) saturate(160%);
             border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            box-shadow: 0 6px 25px 0 rgba(0, 0, 0, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
+            transition: all 0.25s ease;
+        }
+
+        .glass-panel:hover {
+            background: rgba(14, 34, 24, 0.44);
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 10px 30px 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.35);
         }
 
         .glass-header {
@@ -61,304 +87,720 @@
             border-bottom: 1px solid var(--glass-border);
         }
 
-        /* Custom Scrollbar for Terminal */
+        /* Animated Sensor Logos */
+        @keyframes flameFlicker {
+            0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 6px rgba(244,63,94,0.7)); }
+            25% { transform: scale(1.08) rotate(-3deg); filter: drop-shadow(0 0 12px rgba(244,63,94,1)); }
+            50% { transform: scale(1.03) rotate(2deg); filter: drop-shadow(0 0 8px rgba(244,63,94,0.7)); }
+            75% { transform: scale(1.1) rotate(-1deg); filter: drop-shadow(0 0 11px rgba(244,63,94,0.9)); }
+        }
+
+        @keyframes dropletBounce {
+            0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 5px rgba(56,189,248,0.6)); }
+            50% { transform: translateY(-3px) scale(1.07); filter: drop-shadow(0 0 12px rgba(56,189,248,1)); }
+        }
+
+        @keyframes tempPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(249,115,22,0.5)); }
+            50% { transform: scale(1.07) translateY(-1px); filter: drop-shadow(0 0 12px rgba(249,115,22,1)); }
+        }
+
+        @keyframes smokeDrift {
+            0%, 100% { transform: rotate(0deg) scale(1); filter: drop-shadow(0 0 5px rgba(192,132,252,0.5)); }
+            50% { transform: rotate(10deg) scale(1.07); filter: drop-shadow(0 0 12px rgba(192,132,252,1)); }
+        }
+
+        .anim-temp {
+            animation: tempPulse 2.6s ease-in-out infinite;
+        }
+
+        .anim-humidity {
+            animation: dropletBounce 2.3s ease-in-out infinite;
+        }
+
+        .anim-smoke {
+            animation: smokeDrift 3.2s ease-in-out infinite;
+        }
+
+        .anim-flame {
+            animation: flameFlicker 1.8s ease-in-out infinite;
+        }
+
         .terminal-scroll::-webkit-scrollbar {
-            width: 6px;
+            width: 4px;
         }
         .terminal-scroll::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2); 
+            background: rgba(0, 0, 0, 0.35); 
             border-radius: 4px;
         }
         .terminal-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2); 
+            background: rgba(52, 211, 153, 0.6); 
             border-radius: 4px;
         }
-        .terminal-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.4); 
-        }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in-up {
-            opacity: 0;
-            animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        /* Progress Bar Base */
         .metric-bar {
-            height: 2px;
-            background: rgba(255, 255, 255, 0.1);
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
             width: 100%;
-            margin-top: 1.5rem;
-            border-radius: 2px;
+            margin-top: 0.65rem;
+            border-radius: 9999px;
             overflow: hidden;
             position: relative;
         }
         .metric-fill {
             height: 100%;
-            background: var(--text-muted);
             width: 0%;
-            transition: width 0.5s ease, background-color 0.5s ease;
+            border-radius: 9999px;
+            transition: width 0.4s ease, background-color 0.4s ease;
         }
 
-        /* Layout Utilities */
         .layout-container {
-            max-w-[1400px];
-            margin: 0 auto;
+            max-width: 1260px;
+            margin-left: auto;
+            margin-right: auto;
             position: relative;
             z-index: 10;
         }
+
+        .nav-btn {
+            transition: all 0.2s ease;
+        }
+        .nav-btn-active {
+            background: rgba(16, 185, 129, 0.35) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(52, 211, 153, 0.7) !important;
+            box-shadow: 0 0 12px rgba(52, 211, 153, 0.4) !important;
+        }
+
+        .trend-btn {
+            transition: all 0.2s ease;
+        }
+        .trend-btn.active {
+            background: rgba(16, 185, 129, 0.35) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(52, 211, 153, 0.7) !important;
+            box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+        }
+
+        .hardware-img-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .hardware-img-container img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            transition: transform 0.35s ease;
+        }
+
+        .hardware-card:hover .hardware-img-container img {
+            transform: scale(1.05);
+        }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased selection:bg-emerald-500 selection:text-white pb-6">
 
-    <!-- Background Darkening Overlay -->
+    <!-- Crystal Clear Sunlit Forest Background -->
+    <div class="bg-backdrop"></div>
+
+    <!-- Crystal Clear Ambient Light Wash -->
     <div class="ambient-overlay"></div>
 
-    <nav class="glass-panel sticky top-0 z-50 border-b border-white/10 layout-container rounded-b-2xl mx-4 xl:mx-auto mt-0 xl:mt-4">
-        <div class="px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+    <!-- Navigation Header -->
+    <header class="layout-container px-3 sm:px-4 pt-3 pb-1">
+        <nav class="glass-panel rounded-xl border-white/25 px-4 py-2.5 flex flex-col md:flex-row justify-between items-center gap-3">
             
-            <!-- Logo Area -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400/80 to-emerald-700/80 flex items-center justify-center border border-white/20 shadow-lg">
-                    <i data-lucide="triangle" class="text-white w-6 h-6 fill-white/20"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-tight text-white leading-tight">Forest Guard</h1>
-                    <p class="text-[10px] uppercase tracking-widest text-emerald-300 font-medium">Save Our Forest</p>
-                </div>
-            </div>
-
-            <!-- Main Navigation Tabs -->
-            <div class="hidden md:flex items-center space-x-1 bg-black/30 p-1.5 rounded-xl border border-white/5">
-                <button id="nav-home" onclick="switchTab('home')" class="nav-btn px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium shadow-sm transition-all flex items-center gap-2">
-                    <i data-lucide="home" class="w-4 h-4"></i> Home
-                </button>
-                <button id="nav-trends" onclick="switchTab('trends')" class="nav-btn px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition-all flex items-center gap-2">
-                    <i data-lucide="line-chart" class="w-4 h-4"></i> Trends
-                </button>
-                <button id="nav-alerts" onclick="switchTab('alerts')" class="nav-btn px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition-all flex items-center gap-2 relative">
-                    <i data-lucide="bell" class="w-4 h-4"></i> Alerts
-                    <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-black animate-pulse"></span>
-                </button>
-                <button id="nav-actionplan" onclick="switchTab('actionplan')" class="nav-btn px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition-all flex items-center gap-2">
-                    <i data-lucide="clipboard-list" class="w-4 h-4"></i> Action Plan
-                </button>
-                <button id="nav-hardware" onclick="switchTab('hardware')" class="nav-btn px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 text-sm font-medium transition-all flex items-center gap-2">
-                    <i data-lucide="server" class="w-4 h-4"></i> Hardware
-                </button>
-            </div>
-
-            <!-- Status Indicator -->
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-white/10">
-                <div class="relative flex h-2.5 w-2.5">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                </div>
-                <span class="text-xs font-semibold text-slate-200 tracking-wide">Monitoring</span>
-            </div>
-        </div>
-    </nav>
-
-    <main class="layout-container px-4 xl:px-0 py-8 flex flex-col gap-8">
-        
-        <!-- HOME VIEW -->
-        <div id="view-home" class="flex flex-col gap-8 fade-in-up">
-            <section class="glass-panel rounded-2xl overflow-hidden" style="animation-delay: 0.1s;">
-                <!-- MacOS style window header -->
-                <div class="glass-header px-4 py-3 flex items-center gap-4">
-                    <div class="flex gap-2">
-                        <div class="w-3 h-3 rounded-full bg-red-500/80 border border-red-500/50 shadow-inner"></div>
-                        <div class="w-3 h-3 rounded-full bg-amber-500/80 border border-amber-500/50 shadow-inner"></div>
-                        <div class="w-3 h-3 rounded-full bg-green-500/80 border border-green-500/50 shadow-inner"></div>
+            <!-- Logo Area with Realistic Emblem -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 via-green-600 to-emerald-800 flex items-center justify-center border border-emerald-300/60 shadow-[0_0_15px_rgba(52,211,153,0.5)]">
+                        <svg class="w-5 h-5 drop-shadow" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 3L5 7V15C5 22.5 9.7 27.8 16 29.5C22.3 27.8 27 22.5 27 15V7L16 3Z" fill="#047857" stroke="#34d399" stroke-width="1.3"/>
+                            <path d="M16 8L11 15H13.5L10 20H14.5V24H17.5V20H22L18.5 15H21L16 8Z" fill="#ffffff" fill-opacity="0.95"/>
+                        </svg>
                     </div>
-                    <span class="text-xs text-slate-400 font-mono tracking-wider">Serial Monitor – NodeMCU / ttyUSB0</span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg sm:text-xl font-black tracking-tight text-white leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">Forest Guard</h1>
+                            <span id="sys-live-badge" class="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500/30 border border-amber-400/60 text-amber-300 uppercase tracking-wider drop-shadow transition-all">STANDBY</span>
+                        </div>
+                        <p class="text-[10px] uppercase tracking-wider text-emerald-300 font-bold drop-shadow">Wildfire Early Warning & Telemetry</p>
+                    </div>
+                </div>
+
+                <!-- WiFi Status Pill in Header -->
+                <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 border border-white/20 text-xs font-mono shadow">
+                    <i id="icon-wifi" data-lucide="wifi" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <span id="val-wifi" class="text-white font-bold drop-shadow">--</span>
+                    <span class="text-teal-300 font-bold text-xs">dBm</span>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex flex-wrap items-center justify-center gap-1 bg-black/50 p-1 rounded-lg border border-white/20 shadow-inner w-full md:w-auto">
+                <button id="nav-home" onclick="switchTab('home')" class="nav-btn nav-btn-active px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5">
+                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Dashboard
+                </button>
+                <button id="nav-trends" onclick="switchTab('trends')" class="nav-btn px-3.5 py-1.5 rounded-md text-slate-200 hover:text-white hover:bg-white/15 text-xs font-bold flex items-center gap-1.5">
+                    <i data-lucide="line-chart" class="w-3.5 h-3.5"></i> Trends
+                </button>
+                <button id="nav-alerts" onclick="switchTab('alerts')" class="nav-btn px-3.5 py-1.5 rounded-md text-slate-200 hover:text-white hover:bg-white/15 text-xs font-bold flex items-center gap-1.5 relative">
+                    <i data-lucide="bell" class="w-3.5 h-3.5"></i> Alerts
+                    <span id="nav-alert-badge" class="hidden absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full border border-black animate-ping"></span>
+                    <span id="nav-alert-dot" class="hidden absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full border border-black"></span>
+                </button>
+                <button id="nav-actionplan" onclick="switchTab('actionplan')" class="nav-btn px-3.5 py-1.5 rounded-md text-slate-200 hover:text-white hover:bg-white/15 text-xs font-bold flex items-center gap-1.5">
+                    <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Action Plan
+                </button>
+                <button id="nav-hardware" onclick="switchTab('hardware')" class="nav-btn px-3.5 py-1.5 rounded-md text-slate-200 hover:text-white hover:bg-white/15 text-xs font-bold flex items-center gap-1.5">
+                    <i data-lucide="cpu" class="w-3.5 h-3.5"></i> Hardware
+                </button>
+            </div>
+
+            <!-- Desktop Live Status Pill (Dynamic Standby / Active Monitoring) -->
+            <div id="sys-status-container" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-400/50 shadow transition-all">
+                <span class="relative flex h-2 w-2">
+                    <span id="sys-status-dot-ping" class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+                    <span id="sys-status-dot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"></span>
+                </span>
+                <span id="sys-status-text" class="text-[11px] font-bold text-amber-200 uppercase tracking-wider">Awaiting Sensors</span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Container (Properly Sized Dashboard, Crystal Clear Backdrop) -->
+    <main class="layout-container px-3 sm:px-4 pt-2 flex flex-col gap-3.5">
+        
+        <!-- ==================== HOME / DASHBOARD VIEW (SLIGHTLY REDUCED HEIGHT & CLEAN SIZING) ==================== -->
+        <div id="view-home" class="flex flex-col gap-3.5">
+            
+            <!-- Serial Telemetry Monitor (Compact Sizing) -->
+            <section class="glass-panel rounded-xl overflow-hidden border-emerald-400/30">
+                <div class="glass-header px-4 py-2 flex items-center justify-between border-b border-white/15">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.8)]"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]"></div>
+                        </div>
+                        <span class="text-xs text-emerald-300 font-mono font-bold flex items-center gap-1.5 drop-shadow">
+                            <i data-lucide="terminal" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            Serial Telemetry Monitor &bull; NodeMCU ESP8266 [/dev/ttyUSB0]
+                        </span>
+                    </div>
+                    <span class="text-[10px] font-mono text-emerald-300 font-bold bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/40">115200 BAUD</span>
                 </div>
                 
-                <!-- Terminal Output -->
-                <div id="serial-output" class="p-4 h-24 overflow-y-auto terminal-scroll font-mono text-sm space-y-1 bg-black/20">
+                <div id="serial-output" class="p-2.5 h-16 sm:h-20 overflow-y-auto terminal-scroll font-mono text-xs space-y-1 bg-black/45">
                 </div>
             </section>
 
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
-            <!-- Real-Time Temperature Chart -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden fade-in-up group lg:col-span-2 md:col-span-2 flex flex-col" style="animation-delay: 0.2s;">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="flex flex-col">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Temperature Trend</h3>
-                        <div class="flex items-end gap-2 mt-1">
-                            <span id="val-temp-current" class="text-3xl font-light tracking-tighter text-white">--</span>
-                            <span class="text-lg text-slate-400 font-medium mb-0.5">°C</span>
+            <!-- 4 Core Metric Cards (Balanced Height, Clean Proportions, Consistent Initial States) -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                
+                <!-- 1. Temperature Card -->
+                <div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between border-amber-400/35 hover:border-amber-300/50 shadow-lg">
+                    <div class="flex justify-between items-start mb-2.5">
+                        <div>
+                            <h3 class="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                                Temperature
+                            </h3>
+                            <p class="text-[11px] font-medium text-slate-200 mt-0.5 drop-shadow">DHT11 Digital Probe</p>
+                        </div>
+                        <!-- Animated Thermometer Logo -->
+                        <div class="p-1.5 rounded-lg bg-orange-500/25 border border-orange-400/40 shadow">
+                            <svg class="anim-temp w-7 h-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="mercuryGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#fef08a"/>
+                                        <stop offset="50%" stop-color="#f97316"/>
+                                        <stop offset="100%" stop-color="#dc2626"/>
+                                    </linearGradient>
+                                    <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="rgba(255,255,255,0.85)"/>
+                                        <stop offset="100%" stop-color="rgba(255,255,255,0.3)"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect x="13" y="4" width="6" height="17" rx="3" fill="rgba(255,255,255,0.15)" stroke="url(#glassGrad)" stroke-width="1.3"/>
+                                <circle cx="16" cy="23" r="5.5" fill="rgba(255,255,255,0.15)" stroke="url(#glassGrad)" stroke-width="1.3"/>
+                                <rect x="14.5" y="10" width="3" height="11" rx="1.5" fill="url(#mercuryGrad)"/>
+                                <circle cx="16" cy="23" r="4" fill="url(#mercuryGrad)"/>
+                                <circle cx="14.5" cy="21.5" r="1.3" fill="rgba(255,255,255,0.95)"/>
+                                <line x1="20.5" y1="8" x2="23" y2="8" stroke="#fde047" stroke-width="1.2" stroke-linecap="round"/>
+                                <line x1="20.5" y1="12" x2="23.5" y2="12" stroke="#fde047" stroke-width="1.2" stroke-linecap="round"/>
+                                <line x1="20.5" y1="16" x2="23" y2="16" stroke="#fde047" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
                         </div>
                     </div>
-                    <div class="p-2 rounded-lg bg-orange-500/20 border border-orange-500/30">
-                        <i data-lucide="activity" class="text-orange-400 w-5 h-5"></i>
+                    <div>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="val-temp-current" class="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.85)]">--</span>
+                            <span class="text-xl sm:text-2xl text-amber-300 font-extrabold drop-shadow">°C</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div id="bar-temp" class="metric-fill bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.9)]" style="width: 0%;"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] font-bold text-slate-200 mt-1.5 drop-shadow">
+                            <span>Safe Range: &lt; 45°C</span>
+                            <span class="text-amber-300 font-mono">Real-time</span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex-grow w-full h-28 relative mt-2">
-                    <canvas id="tempChart"></canvas>
-                </div>
-            </div>
 
-            <!-- Humidity Card -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden fade-in-up group hover:bg-white/5 transition-colors duration-300" style="animation-delay: 0.3s;">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Humidity</h3>
-                    <div class="p-2 rounded-lg bg-blue-500/20 border border-blue-500/30">
-                        <i data-lucide="droplets" class="text-blue-400 w-5 h-5"></i>
+                <!-- 2. Air Humidity Card -->
+                <div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between border-sky-400/35 hover:border-sky-300/50 shadow-lg">
+                    <div class="flex justify-between items-start mb-2.5">
+                        <div>
+                            <h3 class="text-xs sm:text-sm font-black text-sky-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                                Air Humidity
+                            </h3>
+                            <p class="text-[11px] font-medium text-slate-200 mt-0.5 drop-shadow">Moisture Content</p>
+                        </div>
+                        <!-- Animated Water Droplet Logo -->
+                        <div class="p-1.5 rounded-lg bg-sky-500/25 border border-sky-400/40 shadow">
+                            <svg class="anim-humidity w-7 h-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <radialGradient id="dropGlow" cx="0.4" cy="0.4" r="0.6">
+                                        <stop offset="0%" stop-color="#f0f9ff"/>
+                                        <stop offset="45%" stop-color="#38bdf8"/>
+                                        <stop offset="100%" stop-color="#0284c7"/>
+                                    </radialGradient>
+                                </defs>
+                                <path d="M16 4C16 4 8 15 8 20.5C8 24.64 11.36 28 15.5 28C19.64 28 23 24.64 23 20.5C23 15 16 4 16 4Z" fill="url(#dropGlow)" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+                                <path d="M12.5 18C12 19 12 20.5 12.8 22.2C13.2 23 13.8 23.6 14.5 24.2" stroke="rgba(255,255,255,0.95)" stroke-width="1.4" stroke-linecap="round"/>
+                                <circle cx="14" cy="13" r="1.3" fill="rgba(255,255,255,0.95)"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="val-hum" class="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.85)]">--</span>
+                            <span class="text-xl sm:text-2xl text-sky-300 font-extrabold drop-shadow">%</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div id="bar-hum" class="metric-fill bg-gradient-to-r from-sky-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.9)]" style="width: 0%;"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] font-bold text-slate-200 mt-1.5 drop-shadow">
+                            <span>Target: &gt; 30% RH</span>
+                            <span class="text-sky-300 font-mono">Relative</span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-end gap-2">
-                    <span id="val-hum" class="text-4xl font-light tracking-tighter text-white">--</span>
-                    <span class="text-lg text-slate-400 font-medium mb-1">%</span>
-                </div>
-                <div class="metric-bar">
-                    <div id="bar-hum" class="metric-fill bg-blue-400" style="width: 0%;"></div>
-                </div>
-            </div>
 
-            <!-- Smoke ADC Card -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden fade-in-up group hover:bg-white/5 transition-colors duration-300" style="animation-delay: 0.4s;">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Smoke ADC</h3>
-                    <div class="p-2 rounded-lg bg-slate-500/20 border border-slate-500/30">
-                        <i data-lucide="wind" class="text-slate-300 w-5 h-5"></i>
+                <!-- 3. Smoke & Gas MQ-2 Card -->
+                <div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between border-purple-400/35 hover:border-purple-300/50 shadow-lg">
+                    <div class="flex justify-between items-start mb-2.5">
+                        <div>
+                            <h3 class="text-xs sm:text-sm font-black text-purple-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                                Smoke & Gas (MQ-2)
+                            </h3>
+                            <p class="text-[11px] font-medium text-slate-200 mt-0.5 drop-shadow">Combustion Density</p>
+                        </div>
+                        <!-- Animated Smoke Gas Logo -->
+                        <div class="p-1.5 rounded-lg bg-purple-500/25 border border-purple-400/40 shadow">
+                            <svg class="anim-smoke w-7 h-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="smokeGrad1" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#faf5ff"/>
+                                        <stop offset="50%" stop-color="#c084fc"/>
+                                        <stop offset="100%" stop-color="#7e22ce"/>
+                                    </linearGradient>
+                                    <linearGradient id="smokeGrad2" x1="0" y1="1" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#f3e8ff"/>
+                                        <stop offset="100%" stop-color="#a855f7"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M9 24C6 24 5 21 7 18C5 15 7 12 10 12C11 9 15 8 18 10C21 8 26 10 25 15C28 17 27 21 24 23C23 24 20 24 19 24" fill="url(#smokeGrad1)" fill-opacity="0.95" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
+                                <path d="M11 20C13 19 15 19 17 21C19 22 21 21 22 19" stroke="url(#smokeGrad2)" stroke-width="1.3" stroke-linecap="round"/>
+                                <path d="M12 15C14 14 17 14 19 16C21 17 23 16 23 14" stroke="rgba(255,255,255,0.85)" stroke-width="1.1" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="val-smoke" class="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.85)]">--</span>
+                            <span class="text-xs sm:text-sm text-purple-300 font-bold font-mono drop-shadow">/ 1024 ADC</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div id="bar-smoke" class="metric-fill bg-gradient-to-r from-purple-400 to-indigo-400 shadow-[0_0_8px_rgba(192,132,252,0.9)]" style="width: 0%;"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] font-bold text-slate-200 mt-1.5 drop-shadow">
+                            <span>Threshold: 400 ADC</span>
+                            <span class="text-purple-300 font-mono">Gas / Smoke</span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-end gap-2">
-                    <span id="val-smoke" class="text-4xl font-light tracking-tighter text-white">--</span>
-                    <span class="text-lg text-slate-400 font-medium mb-1">/1024</span>
-                </div>
-                <div class="metric-bar">
-                    <div id="bar-smoke" class="metric-fill bg-slate-400" style="width: 0%;"></div>
-                </div>
-            </div>
 
-            <!-- IR Flame Card -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden fade-in-up group hover:bg-white/5 transition-colors duration-300" style="animation-delay: 0.6s;">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">IR Flame Sensor</h3>
-                    <div class="p-2 rounded-lg bg-red-500/20 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                        <i data-lucide="flame" class="text-red-400 w-5 h-5"></i>
+                <!-- 4. IR Flame Sensor Card (Consistent Initial State: Shows "--" until telemetry arrives) -->
+                <div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between border-rose-400/35 hover:border-rose-300/50 shadow-lg">
+                    <div class="flex justify-between items-start mb-2.5">
+                        <div>
+                            <h3 class="text-xs sm:text-sm font-black text-rose-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
+                                IR Optical Flame
+                            </h3>
+                            <p class="text-[11px] font-medium text-slate-200 mt-0.5 drop-shadow">Infrared Sensor</p>
+                        </div>
+                        <!-- Animated Flame Logo -->
+                        <div class="p-1.5 rounded-lg bg-rose-500/25 border border-rose-400/40 shadow">
+                            <svg class="anim-flame w-7 h-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="outerFlame" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#f87171"/>
+                                        <stop offset="40%" stop-color="#ef4444"/>
+                                        <stop offset="100%" stop-color="#b91c1c"/>
+                                    </linearGradient>
+                                    <linearGradient id="midFlame" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#fb923c"/>
+                                        <stop offset="50%" stop-color="#f97316"/>
+                                        <stop offset="100%" stop-color="#ea580c"/>
+                                    </linearGradient>
+                                    <linearGradient id="innerFlame" x1="0.5" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#fef08a"/>
+                                        <stop offset="70%" stop-color="#facc15"/>
+                                        <stop offset="100%" stop-color="#f59e0b"/>
+                                    </linearGradient>
+                                </defs>
+                                <path d="M16 3C16 3 10 11 10 18C10 23.5 13.5 28 17 28C22 28 25 23 25 18C25 12 21 8 19 7C19 7 20 11 18 13C16 15 15 13 15 11C15 8 16 3 16 3Z" fill="url(#outerFlame)"/>
+                                <path d="M16 10C16 10 12 16 12 20C12 24 14.5 27 17 27C20.5 27 22.5 23.5 22.5 20C22.5 15 19.5 13 18.5 12C18.5 12 19 14.5 18 15.5C17 16.5 16 15 16 13.5C16 12 16 10 16 10Z" fill="url(#midFlame)"/>
+                                <path d="M16 17C16 17 14 20 14 22.5C14 24.8 15.3 26.5 17 26.5C18.8 26.5 20 24.8 20 22.5C20 19.5 17.5 18 17 17.5C17 18 16.5 18.8 16 18.8C15.5 18.8 15.5 18 16 17Z" fill="url(#innerFlame)"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <!-- Consistent Initial State: Shows "--" matching temperature, humidity, smoke -->
+                        <div class="flex items-center gap-2.5 h-[44px]">
+                            <div id="val-flame-dot" class="w-3.5 h-3.5 rounded-full bg-slate-400"></div>
+                            <span id="val-flame-text" class="text-3xl sm:text-4xl font-black tracking-tight text-slate-300 drop-shadow-[0_3px_10px_rgba(0,0,0,0.85)]">--</span>
+                        </div>
+                        <div class="metric-bar mt-1.5">
+                            <div id="bar-flame" class="metric-fill bg-slate-500" style="width: 0%;"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-[11px] font-bold text-slate-200 mt-1.5 drop-shadow">
+                            <span>Pin D2 (GPIO4)</span>
+                            <span class="text-emerald-300 font-mono">Active Low</span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-center h-[38px]">
-                    <div class="flex items-center gap-3">
-                        <div id="val-flame-dot" class="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                        <span id="val-flame-text" class="text-xl font-medium tracking-tight text-emerald-400">NORMAL</span>
+
+            </section>
+        </div>
+
+        <!-- ==================== TRENDS VIEW (CLEAN EXPANSIVE ONLY-GRAPH VIEW) ==================== -->
+        <div id="view-trends" class="hidden flex flex-col gap-4">
+            <div class="glass-panel rounded-2xl p-4 sm:p-5 border-white/25 shadow-2xl">
+                
+                <!-- Graph Title & Stream Toggles -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3.5">
+                    <div class="flex items-center gap-2.5">
+                        <div class="p-2 rounded-xl bg-emerald-500/25 border border-emerald-400/40 shadow">
+                            <i data-lucide="line-chart" class="w-5 h-5 text-emerald-300"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base sm:text-lg font-black text-white drop-shadow">
+                                Environmental Telemetry Graph
+                            </h2>
+                            <p class="text-xs text-emerald-300 font-semibold drop-shadow">Live Multi-Sensor Temporal Correlation (Temperature, Humidity, Wind, Flame & Smoke)</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Clean Stream Filter Toggles -->
+                    <div class="flex flex-wrap items-center gap-1.5 bg-black/55 p-1 rounded-xl border border-white/25 text-xs shadow-inner">
+                        <button id="trend-filter-all" onclick="setTrendsFilter('all')" class="trend-btn active px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                            All Sensors
+                        </button>
+                        <button id="trend-filter-temp" onclick="setTrendsFilter('temp')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+                            Temp
+                        </button>
+                        <button id="trend-filter-hum" onclick="setTrendsFilter('hum')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+                            Humidity
+                        </button>
+                        <button id="trend-filter-wind" onclick="setTrendsFilter('wind')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+                            Wind
+                        </button>
+                        <button id="trend-filter-flame" onclick="setTrendsFilter('flame')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+                            Flame
+                        </button>
+                        <button id="trend-filter-smoke" onclick="setTrendsFilter('smoke')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+                            Smoke
+                        </button>
                     </div>
                 </div>
-                <div class="metric-bar opacity-50 mt-4">
-                    <div id="bar-flame" class="metric-fill bg-emerald-500" style="width: 100%;"></div>
-                </div>
-            </div>
 
-            <!-- WiFi Signal Card -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden fade-in-up group hover:bg-white/5 transition-colors duration-300" style="animation-delay: 0.7s;">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">WiFi Signal (RSSI)</h3>
-                    <div class="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
-                        <i data-lucide="wifi" class="text-emerald-400 w-5 h-5"></i>
-                    </div>
-                </div>
-                <div class="flex items-end gap-2">
-                    <span id="val-wifi" class="text-4xl font-light tracking-tighter text-white">--</span>
-                    <span class="text-lg text-slate-400 font-medium mb-1">dBm</span>
-                </div>
-                <div class="metric-bar">
-                    <div id="bar-wifi" class="metric-fill bg-emerald-400" style="width: 0%;"></div>
-                </div>
-            </div>
-
-        </section>
-        </div> <!-- End view-home -->
-
-        <!-- TRENDS VIEW -->
-        <div id="view-trends" class="hidden flex flex-col gap-8 fade-in-up">
-            <div class="glass-panel rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-white"><i data-lucide="line-chart"></i> Detailed Trends</h2>
-                <div class="h-64 w-full relative bg-black/20 rounded-lg border border-white/5 p-4">
+                <!-- Expansive Clean Full-Height Graph Canvas -->
+                <div class="h-96 sm:h-[450px] w-full relative bg-black/50 rounded-xl border border-white/20 p-3.5 shadow-inner">
                     <canvas id="bigTempChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- ALERTS VIEW -->
-        <div id="view-alerts" class="hidden flex flex-col gap-8 fade-in-up">
-            <div class="glass-panel rounded-2xl overflow-hidden">
-                <div class="glass-header px-4 py-4 border-b border-white/10 flex items-center gap-2">
-                    <i data-lucide="bell" class="w-5 h-5 text-red-400"></i>
-                    <h2 class="text-xl font-bold text-white">Recent Alerts</h2>
+        <!-- ==================== ALERTS VIEW ==================== -->
+        <div id="view-alerts" class="hidden flex flex-col gap-4">
+            <div class="glass-panel rounded-xl overflow-hidden border-rose-500/35 shadow-2xl">
+                <div class="glass-header px-5 py-3 border-b border-white/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-black/40">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 rounded-xl bg-rose-500/25 border border-rose-400/50 shadow">
+                            <i data-lucide="bell" class="w-4 h-4 text-rose-300"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-white drop-shadow">Security & Anomaly Alerts</h2>
+                            <p class="text-xs text-slate-200">Recorded telemetry anomalies and threshold alerts</p>
+                        </div>
+                    </div>
+                    <button onclick="fetchAlerts()" class="px-3.5 py-1.5 bg-rose-600/40 hover:bg-rose-500/50 border border-rose-400/50 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-2 shadow">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Incident Log
+                    </button>
                 </div>
-                <div class="p-4 overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-300">
+                <div class="p-4 overflow-x-auto bg-black/40">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-100">
                         <thead>
-                            <tr class="text-slate-400 border-b border-white/10">
-                                <th class="pb-2 font-medium">Time (UTC)</th>
-                                <th class="pb-2 font-medium">Type</th>
-                                <th class="pb-2 font-medium">Temp (°C)</th>
-                                <th class="pb-2 font-medium">Smoke (ADC)</th>
+                            <tr class="text-emerald-300 border-b border-white/20 uppercase tracking-wider font-bold">
+                                <th class="pb-2.5 px-3">Timestamp (UTC)</th>
+                                <th class="pb-2.5 px-3">Severity / Anomaly</th>
+                                <th class="pb-2.5 px-3">Temperature (°C)</th>
+                                <th class="pb-2.5 px-3">Smoke (ADC)</th>
                             </tr>
                         </thead>
                         <tbody id="alerts-tbody">
-                            <tr><td colspan="4" class="py-4 text-center text-slate-500">Loading alerts...</td></tr>
+                            <tr><td colspan="4" class="py-6 text-center text-slate-300 font-medium">Fetching recent alerts...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ACTION PLAN VIEW -->
-        <div id="view-actionplan" class="hidden flex flex-col gap-8 fade-in-up">
-            <div class="glass-panel rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-white"><i data-lucide="clipboard-list"></i> Safety Action Plan</h2>
-                <div id="action-plan-content" class="text-sm text-slate-300 space-y-3 whitespace-pre-wrap leading-relaxed bg-black/20 p-6 rounded-lg border border-white/5">Click the button below to generate a safety protocol based on the current sensor data.</div>
-                <button onclick="loadActionPlanView()" class="mt-6 px-4 py-3 bg-emerald-600/80 hover:bg-emerald-500/80 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Generate Current Plan
-                </button>
-            </div>
-        </div>
-
-        <!-- HARDWARE VIEW -->
-        <div id="view-hardware" class="hidden flex flex-col gap-8 fade-in-up">
-            <div class="glass-panel rounded-2xl p-6">
-                <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-white"><i data-lucide="server"></i> Hardware Diagnostics</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-black/20 border border-white/5 p-5 rounded-xl">
-                        <p class="text-slate-400 text-xs uppercase tracking-wider mb-2 font-medium">Microcontroller</p>
-                        <p class="text-white text-lg font-mono">NodeMCU ESP8266</p>
+        <!-- ==================== ACTION PLAN VIEW ==================== -->
+        <div id="view-actionplan" class="hidden flex flex-col gap-4">
+            <div class="glass-panel rounded-xl p-5 sm:p-6 border-white/20 shadow-2xl">
+                <div class="flex items-center gap-3 mb-3.5">
+                    <div class="p-2 rounded-xl bg-emerald-500/25 border border-emerald-400/50 shadow">
+                        <i data-lucide="clipboard-check" class="w-5 h-5 text-emerald-300"></i>
                     </div>
-                    <div class="bg-black/20 border border-white/5 p-5 rounded-xl">
-                        <p class="text-slate-400 text-xs uppercase tracking-wider mb-2 font-medium">Sensors</p>
-                        <p class="text-white text-lg font-mono">DHT11, MQ-2, IR</p>
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white drop-shadow">Automated Safety Protocol & Action Plan</h2>
+                        <p class="text-xs text-slate-200">Contextual evacuation and suppression protocol based on current telemetry</p>
                     </div>
-                    <div class="bg-black/20 border border-white/5 p-5 rounded-xl">
-                        <p class="text-slate-400 text-xs uppercase tracking-wider mb-2 font-medium">Connection</p>
-                        <p class="text-emerald-400 text-lg font-medium flex items-center gap-2 font-mono">
-                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span> Online
-                        </p>
-                    </div>
-                    <div class="bg-black/20 border border-white/5 p-5 rounded-xl">
-                        <p class="text-slate-400 text-xs uppercase tracking-wider mb-2 font-medium">Alert Logic</p>
-                        <p class="text-white text-lg font-mono">Backend Hosted</p>
-                    </div>
+                </div>
+                <div id="action-plan-content" class="text-sm text-slate-100 space-y-3 whitespace-pre-wrap leading-relaxed bg-black/45 p-5 rounded-xl border border-white/20 font-medium shadow-inner">
+                    Click the button below to generate an immediate safety protocol based on active sensor data.
+                </div>
+                <div class="mt-4 flex flex-wrap gap-3">
+                    <button onclick="loadActionPlanView()" class="px-5 py-2.5 bg-emerald-600/90 hover:bg-emerald-500 text-white rounded-xl transition-all font-bold flex items-center justify-center gap-2 border border-emerald-400/50 shadow-lg text-xs sm:text-sm">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i> Generate Action Plan Now
+                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- ==================== HARDWARE SECTION (REALISTIC MODULES WITH STUDIO IMAGES) ==================== -->
+        <div id="view-hardware" class="hidden flex flex-col gap-4">
+            
+            <!-- Section Header -->
+            <div class="glass-panel rounded-xl p-4 sm:p-5 border-white/20">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 rounded-xl bg-teal-500/25 border border-teal-400/50">
+                            <i data-lucide="cpu" class="w-5 h-5 text-teal-300"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white drop-shadow">Hardware Array & Sensor Modules</h2>
+                            <p class="text-xs text-slate-200">Physical IoT components, pinout assignments, and technical specifications</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 border border-white/20">
+                        <span id="hw-verified-dot" class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"></span>
+                        <span id="hw-verified-text" class="text-xs font-mono font-bold text-amber-200">Hardware Standby (Awaiting Link)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware Modules Grid: 4 Realistic Hardware Cards with Studio Images -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- 1. NodeMCU ESP8266 -->
+                <div class="glass-panel hardware-card rounded-xl p-4 flex flex-col justify-between border-white/20 hover:border-emerald-400/60 transition-all">
+                    <div>
+                        <div class="hardware-img-container mb-3">
+                            <img src="/images/nodemcu_esp8266.jpg" alt="NodeMCU ESP8266 Microcontroller" loading="lazy">
+                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-emerald-400/50 text-[10px] font-mono text-emerald-300 font-bold">
+                                MASTER SOC
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="text-sm font-bold text-white drop-shadow">NodeMCU ESP8266</h3>
+                            <span id="hw-badge-nodemcu" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/30 text-amber-300 border border-amber-400/50">STANDBY</span>
+                        </div>
+                        <p class="text-[11px] text-emerald-300 font-bold uppercase tracking-wider mb-2">Microcontroller & WiFi</p>
+                        <p class="text-xs text-slate-200 leading-relaxed mb-3">
+                            Primary processing unit responsible for gathering sensor telemetry, executing threshold logic, and transmitting REST packets.
+                        </p>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-white/15 space-y-1 text-xs font-mono">
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Processor:</span>
+                            <span class="text-white font-bold">Tensilica L106</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Clock:</span>
+                            <span class="text-white font-bold">80 / 160 MHz</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Wireless:</span>
+                            <span class="text-teal-300 font-bold">WiFi 802.11 b/g/n</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. DHT11 Sensor -->
+                <div class="glass-panel hardware-card rounded-xl p-4 flex flex-col justify-between border-white/20 hover:border-sky-400/60 transition-all">
+                    <div>
+                        <div class="hardware-img-container mb-3">
+                            <img src="/images/dht11_sensor.jpg" alt="DHT11 Temperature and Humidity Sensor" loading="lazy">
+                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-sky-400/50 text-[10px] font-mono text-sky-300 font-bold">
+                                PIN D4 (GPIO2)
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="text-sm font-bold text-white drop-shadow">DHT11 Sensor</h3>
+                            <span id="hw-badge-dht11" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50">STANDBY</span>
+                        </div>
+                        <p class="text-[11px] text-sky-300 font-bold uppercase tracking-wider mb-2">Temp & Humidity Probe</p>
+                        <p class="text-xs text-slate-200 leading-relaxed mb-3">
+                            Calibrated composite sensor measuring ambient temperature and humidity to assess drought, heat waves, and dry brush risks.
+                        </p>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-white/15 space-y-1 text-xs font-mono">
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Temp Range:</span>
+                            <span class="text-white font-bold">0–50°C (±2°C)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Humidity:</span>
+                            <span class="text-white font-bold">20–90% RH</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Protocol:</span>
+                            <span class="text-sky-300 font-bold">Single-Bus Digital</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. MQ-2 Sensor -->
+                <div class="glass-panel hardware-card rounded-xl p-4 flex flex-col justify-between border-white/20 hover:border-purple-400/60 transition-all">
+                    <div>
+                        <div class="hardware-img-container mb-3">
+                            <img src="/images/mq2_sensor.jpg" alt="MQ-2 Gas and Smoke Detector Sensor" loading="lazy">
+                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-purple-400/50 text-[10px] font-mono text-purple-300 font-bold">
+                                PIN A0 (ADC)
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="text-sm font-bold text-white drop-shadow">MQ-2 Gas & Smoke</h3>
+                            <span id="hw-badge-mq2" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50">STANDBY</span>
+                        </div>
+                        <p class="text-[11px] text-purple-300 font-bold uppercase tracking-wider mb-2">Combustion Gas Sensor</p>
+                        <p class="text-xs text-slate-200 leading-relaxed mb-3">
+                            Chemical SnO2 sensor sensitive to smoke, LPG, propane, and hydrogen, detecting smoldering forest debris before flame breakout.
+                        </p>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-white/15 space-y-1 text-xs font-mono">
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Range:</span>
+                            <span class="text-white font-bold">300–10000 ppm</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Output:</span>
+                            <span class="text-purple-300 font-bold">0–1024 ADC</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Supply:</span>
+                            <span class="text-white font-bold">5.0V DC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. IR Flame Sensor -->
+                <div class="glass-panel hardware-card rounded-xl p-4 flex flex-col justify-between border-white/20 hover:border-rose-400/60 transition-all">
+                    <div>
+                        <div class="hardware-img-container mb-3">
+                            <img src="/images/ir_flame_sensor.jpg" alt="IR Optical Flame Detection Module" loading="lazy">
+                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-rose-400/50 text-[10px] font-mono text-rose-300 font-bold">
+                                PIN D2 (GPIO4)
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="text-sm font-bold text-white drop-shadow">IR Flame Sensor</h3>
+                            <span id="hw-badge-flame" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50">STANDBY</span>
+                        </div>
+                        <p class="text-[11px] text-rose-300 font-bold uppercase tracking-wider mb-2">Infrared Optical Detector</p>
+                        <p class="text-xs text-slate-200 leading-relaxed mb-3">
+                            High-speed photodiode with LM393 comparator tuned to infrared wavelengths emitted by active flames, ensuring millisecond-level detection.
+                        </p>
+                    </div>
+
+                    <div class="pt-2.5 border-t border-white/15 space-y-1 text-xs font-mono">
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Spectrum:</span>
+                            <span class="text-white font-bold">760–1100 nm</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Angle:</span>
+                            <span class="text-white font-bold">60 Degrees</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300 font-medium">Comparator:</span>
+                            <span class="text-rose-300 font-bold">LM393 Diff</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Hardware Pinout & Wiring Topology -->
+            <div class="glass-panel rounded-xl p-4 sm:p-5 border-white/20">
+                <h3 class="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2 drop-shadow">
+                    <i data-lucide="network" class="w-4 h-4 text-emerald-400"></i>
+                    Microcontroller Pinout & Wiring Topology
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
+                    <div class="bg-black/45 border border-white/15 p-3 rounded-lg">
+                        <span class="text-emerald-400 font-bold block mb-1">DHT11 SENSOR PIN</span>
+                        <p class="text-white font-semibold">DATA &rarr; Pin D4 (GPIO2)</p>
+                        <p class="text-slate-300 mt-0.5">VCC &rarr; 3.3V | GND &rarr; GND</p>
+                    </div>
+                    <div class="bg-black/45 border border-white/15 p-3 rounded-lg">
+                        <span class="text-purple-400 font-bold block mb-1">MQ-2 SMOKE SENSOR</span>
+                        <p class="text-white font-semibold">AOUT &rarr; Pin A0 (ADC0)</p>
+                        <p class="text-slate-300 mt-0.5">VCC &rarr; 5.0V (Vin) | GND &rarr; GND</p>
+                    </div>
+                    <div class="bg-black/45 border border-white/15 p-3 rounded-lg">
+                        <span class="text-rose-400 font-bold block mb-1">IR FLAME SENSOR</span>
+                        <p class="text-white font-semibold">DOUT &rarr; Pin D2 (GPIO4)</p>
+                        <p class="text-slate-300 mt-0.5">VCC &rarr; 3.3V | GND &rarr; GND</p>
+                    </div>
+                    <div class="bg-black/45 border border-white/15 p-3 rounded-lg">
+                        <span class="text-amber-400 font-bold block mb-1">ALARM BUZZER</span>
+                        <p class="text-white font-semibold">POS &rarr; Pin D5 (GPIO14)</p>
+                        <p class="text-slate-300 mt-0.5">Audio Warning Output</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </main>
 
-    <script src="app.js?v=7"></script>
+    <script src="app.js?v=26"></script>
     <script>
         function switchTab(tabId) {
             ['home', 'trends', 'alerts', 'actionplan', 'hardware'].forEach(t => {
@@ -368,20 +810,22 @@
                     if(t === tabId) {
                         el.classList.remove('hidden');
                         if(btn) {
-                            btn.classList.add('bg-white/10', 'text-white');
-                            btn.classList.remove('text-slate-300');
+                            btn.classList.add('nav-btn-active');
+                            btn.classList.remove('text-slate-200');
                         }
                     } else {
                         el.classList.add('hidden');
                         if(btn) {
-                            btn.classList.remove('bg-white/10', 'text-white');
-                            btn.classList.add('text-slate-300');
+                            btn.classList.remove('nav-btn-active');
+                            btn.classList.add('text-slate-200');
                         }
                     }
                 }
             });
             if(tabId === 'alerts') fetchAlerts();
-            lucide.createIcons();
+            setTimeout(() => {
+                if (window.lucide) lucide.createIcons();
+            }, 30);
         }
 
         async function fetchAlerts() {
@@ -390,15 +834,19 @@
                 const data = await res.json();
                 const tbody = document.getElementById('alerts-tbody');
                 if(!data.length) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">No alerts recorded.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-300 font-medium">No alerts recorded. All systems within safe thresholds.</td></tr>';
                     return;
                 }
                 tbody.innerHTML = data.map(a => `
-                    <tr class="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                        <td class="py-3 px-2 text-xs font-mono text-slate-400">${new Date(a.received_at + "Z").toLocaleString()}</td>
-                        <td class="py-3 pr-2 text-red-400 font-medium text-xs sm:text-sm">${a.alert_type.replace('_', ' ').toUpperCase()}</td>
-                        <td class="py-3 pr-2">${a.temperature_c ?? '--'}</td>
-                        <td class="py-3">${a.smoke_adc ?? '--'}</td>
+                    <tr class="border-b border-white/15 last:border-0 hover:bg-white/10 transition-colors">
+                        <td class="py-2.5 px-3 text-xs font-mono text-emerald-300 font-bold">${new Date(a.received_at + "Z").toLocaleString()}</td>
+                        <td class="py-2.5 px-3">
+                            <span class="px-2 py-0.5 rounded bg-rose-500/30 border border-rose-400/50 text-rose-300 font-bold text-xs uppercase tracking-wider">
+                                ${a.alert_type.replace('_', ' ').toUpperCase()}
+                            </span>
+                        </td>
+                        <td class="py-2.5 px-3 font-bold text-white">${a.temperature_c ?? '--'} °C</td>
+                        <td class="py-2.5 px-3 font-bold text-amber-300">${a.smoke_adc ?? '--'}</td>
                     </tr>
                 `).join('');
             } catch(e) {
@@ -408,17 +856,22 @@
 
         async function loadActionPlanView() {
             const btnText = document.getElementById('action-plan-content');
-            btnText.innerHTML = '<span class="animate-pulse text-emerald-400">Analyzing current sensor telemetry...</span>';
+            btnText.innerHTML = '<span class="animate-pulse text-emerald-400 font-bold flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Analyzing live telemetry and generating security protocol...</span>';
+            if (window.lucide) lucide.createIcons();
             try {
                 let res = await fetch('/api/action/suggest');
                 let data = await res.json();
                 btnText.innerText = data.analysis || 'No data available.';
             } catch (e) {
-                btnText.innerText = 'Error loading plan. Please verify connection.';
+                btnText.innerText = 'Unable to connect to AI action plan engine. Please verify backend server.';
             }
         }
 
-        // Initialize first tab
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Initialize default tab
         switchTab('home');
     </script>
 </body>

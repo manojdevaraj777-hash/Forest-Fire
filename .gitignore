@@ -32,3 +32,10 @@ backend/webapp/*.map
 # Flask server logs
 server.log
 server.err.log
+
+# Python virtual environment & cache
+backend/venv/
+venv/
+.venv/
+__pycache__/
+*.pyc

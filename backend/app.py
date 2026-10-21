@@ -259,7 +259,48 @@ def receive_reading():
 @app.route("/api/readings")
 def get_readings():
     rows = get_db().execute("SELECT * FROM readings ORDER BY id DESC LIMIT 100").fetchall()
-    return jsonify([dict(r) for r in rows])
+    resp = jsonify([dict(r) for r in rows])
+    resp.headers["X-Server-Time"] = datetime.now(timezone.utc).isoformat()
+    return resp
+
+
+@app.route("/api/status")
+def system_status():
+    now_utc = datetime.now(timezone.utc)
+    row = get_db().execute("SELECT * FROM readings ORDER BY id DESC LIMIT 1").fetchone()
+    if not row:
+        return jsonify({
+            "status": "standby",
+            "connected": False,
+            "message": "Awaiting hardware connection. No sensor data in database.",
+            "server_time": now_utc.isoformat()
+        })
+    r = dict(row)
+    try:
+        dt = datetime.fromisoformat(r["received_at"])
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        age_sec = (now_utc - dt).total_seconds()
+    except Exception:
+        age_sec = 999999
+
+    connected = age_sec <= 45
+    return jsonify({
+        "status": "online" if connected else "offline",
+        "connected": connected,
+        "age_seconds": round(age_sec, 1),
+        "latest_reading": r if connected else None,
+        "server_time": now_utc.isoformat()
+    })
+
+
+@app.route("/api/clear", methods=["POST", "GET"])
+def clear_database():
+    db = get_db()
+    db.execute("DELETE FROM readings")
+    db.execute("DELETE FROM alerts")
+    db.commit()
+    return jsonify({"ok": True, "message": "All readings and alerts cleared. System in standby mode."})
 
 
 @app.route("/api/alerts")
@@ -272,8 +313,26 @@ def get_alerts():
 def action_suggest():
     rows = get_db().execute("SELECT * FROM readings ORDER BY id DESC LIMIT 1").fetchall()
     if not rows:
-        return jsonify({"error": "no data"}), 404
+        return jsonify({
+            "connected": False,
+            "analysis": "STANDBY: No sensor data found.\n\nPlease connect your NodeMCU ESP8266 and sensors (DHT11, MQ-2, IR Flame) to stream live telemetry and generate automated safety protocols."
+        }), 200
     r = dict(rows[0])
+    
+    try:
+        dt = datetime.fromisoformat(r["received_at"])
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        age_sec = (datetime.now(timezone.utc) - dt).total_seconds()
+    except Exception:
+        age_sec = 999999
+
+    if age_sec > 45:
+        return jsonify({
+            "connected": False,
+            "analysis": f"HARDWARE OFFLINE: Last sensor reading was received {round(age_sec)} seconds ago.\n\nPlease ensure your NodeMCU is powered and connected to WiFi to stream live telemetry."
+        }), 200
+
     sensor_data = {
         "temperature_c": r["temperature_c"],
         "humidity_percent": r["humidity_percent"],
@@ -283,7 +342,7 @@ def action_suggest():
         "alert": bool(r["alert"])
     }
     analysis = get_action_plan(sensor_data)
-    return jsonify({"analysis": analysis, "sensor_data": sensor_data})
+    return jsonify({"connected": True, "analysis": analysis, "sensor_data": sensor_data})
 
 
 if __name__ == "__main__":
@@ -299,4 +358,5 @@ if __name__ == "__main__":
     print(f"  Action Plan: ON")
     print("=" * 55)
     print()
-    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
