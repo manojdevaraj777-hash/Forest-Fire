@@ -31,18 +31,16 @@ function addLog(msg, type="info") {
     }
 }
 
-// Chart Data Buffers (30 samples rolling window)
+// Chart Data Buffers (30 samples rolling window) - Only physical sensors: Temp, Smoke, Flame
 const MAX_DATA_POINTS = 30;
 let tempLabels = Array(MAX_DATA_POINTS).fill('');
 let tempData = Array(MAX_DATA_POINTS).fill(null);
-let humData = Array(MAX_DATA_POINTS).fill(null);
-let windData = Array(MAX_DATA_POINTS).fill(null);
 let flameData = Array(MAX_DATA_POINTS).fill(null);
 let smokeData = Array(MAX_DATA_POINTS).fill(null);
 
 let activeTrendsFilter = 'all';
 
-// Setup Unified All-in-One Multi-Sensor Chart for Trends Tab
+// Setup Unified Multi-Sensor Bar Chart for Trends Tab
 const bctx = document.getElementById('bigTempChart');
 let bigTempChart = null;
 
@@ -54,14 +52,6 @@ if (bctx) {
     tempGrad.addColorStop(0, 'rgba(245, 158, 11, 0.40)');
     tempGrad.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
 
-    const humGrad = bigCtx.createLinearGradient(0, 0, 0, 320);
-    humGrad.addColorStop(0, 'rgba(56, 189, 248, 0.40)');
-    humGrad.addColorStop(1, 'rgba(56, 189, 248, 0.02)');
-
-    const windGrad = bigCtx.createLinearGradient(0, 0, 0, 320);
-    windGrad.addColorStop(0, 'rgba(45, 212, 191, 0.40)');
-    windGrad.addColorStop(1, 'rgba(45, 212, 191, 0.02)');
-
     const flameGrad = bigCtx.createLinearGradient(0, 0, 0, 320);
     flameGrad.addColorStop(0, 'rgba(244, 63, 94, 0.45)');
     flameGrad.addColorStop(1, 'rgba(244, 63, 94, 0.02)');
@@ -71,7 +61,7 @@ if (bctx) {
     smokeGrad.addColorStop(1, 'rgba(192, 132, 252, 0.02)');
 
     bigTempChart = new Chart(bigCtx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: tempLabels,
             datasets: [
@@ -79,71 +69,30 @@ if (bctx) {
                     label: 'Temperature (°C)',
                     data: tempData,
                     borderColor: '#f59e0b', 
-                    backgroundColor: tempGrad,
-                    borderWidth: 2.8,
-                    pointRadius: 3.5,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#d97706',
-                    pointBorderWidth: 2,
-                    fill: false,
-                    tension: 0.35,
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'Humidity (%)',
-                    data: humData,
-                    borderColor: '#38bdf8', 
-                    backgroundColor: humGrad,
-                    borderWidth: 2.6,
-                    pointRadius: 3.5,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#0284c7',
-                    pointBorderWidth: 2,
-                    fill: false,
-                    tension: 0.35,
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'Wind Speed (km/h)',
-                    data: windData,
-                    borderColor: '#2dd4bf', 
-                    backgroundColor: windGrad,
-                    borderWidth: 2.6,
-                    pointRadius: 3.5,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#0d9488',
-                    pointBorderWidth: 2,
-                    fill: false,
-                    tension: 0.35,
+                    backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    borderSkipped: false,
                     yAxisID: 'y'
                 },
                 {
                     label: 'Flame Alert State (%)',
                     data: flameData,
                     borderColor: '#f43f5e', 
-                    backgroundColor: flameGrad,
-                    borderWidth: 2.8,
-                    pointRadius: 3.5,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#e11d48',
-                    pointBorderWidth: 2,
-                    stepped: true,
-                    fill: true,
-                    tension: 0,
+                    backgroundColor: 'rgba(244, 63, 94, 0.90)',
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    borderSkipped: false,
                     yAxisID: 'y'
                 },
                 {
                     label: 'Smoke MQ-2 (ADC)',
                     data: smokeData,
                     borderColor: '#c084fc', 
-                    backgroundColor: smokeGrad,
-                    borderWidth: 2.5,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#9333ea',
-                    pointBorderWidth: 2,
-                    fill: false,
-                    tension: 0.35,
+                    backgroundColor: 'rgba(192, 132, 252, 0.85)',
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    borderSkipped: false,
                     yAxisID: 'y1'
                 }
             ]
@@ -188,7 +137,7 @@ if (bctx) {
                     ticks: { color: '#38bdf8', font: { size: 11, weight: 'bold' } },
                     title: {
                         display: true,
-                        text: 'Temp (°C) / Humidity (%) / Wind (km/h) / Flame (%)',
+                        text: 'Temperature (°C) / Flame Alert (%)',
                         color: '#e2e8f0',
                         font: { weight: 'bold', size: 10 }
                     }
@@ -213,12 +162,12 @@ if (bctx) {
     });
 }
 
-// Interactive Filter function for Trends tab
+// Interactive Filter function for Trends tab (Only Temperature, Smoke, and Flame)
 window.setTrendsFilter = function(filterMode) {
     if (!bigTempChart) return;
     activeTrendsFilter = filterMode;
 
-    ['all', 'temp', 'hum', 'wind', 'flame', 'smoke'].forEach(k => {
+    ['all', 'temp', 'smoke', 'flame'].forEach(k => {
         const btn = $(`#trend-filter-${k}`);
         if (btn) {
             if (k === filterMode) {
@@ -235,39 +184,25 @@ window.setTrendsFilter = function(filterMode) {
         bigTempChart.data.datasets.forEach(ds => ds.hidden = false);
     } else if (filterMode === 'temp') {
         bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 0));
-    } else if (filterMode === 'hum') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 1));
-    } else if (filterMode === 'wind') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 2));
     } else if (filterMode === 'flame') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 3));
+        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 1));
     } else if (filterMode === 'smoke') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 4));
+        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 2));
     }
     bigTempChart.update();
 };
 
 function updateTrendStats() {
     const validTemps = tempData.filter(v => v != null);
-    const validHums = humData.filter(v => v != null);
-    const validWinds = windData.filter(v => v != null);
     const validFlames = flameData.filter(v => v != null);
     const validSmokes = smokeData.filter(v => v != null);
 
     const elPeakTemp = $("#trend-peak-temp");
-    const elCurHum = $("#trend-cur-hum");
-    const elWind = $("#trend-cur-wind");
     const elFlame = $("#trend-cur-flame");
     const elAvgSmoke = $("#trend-avg-smoke");
 
     if (elPeakTemp && validTemps.length) {
         elPeakTemp.textContent = Math.max(...validTemps).toFixed(1);
-    }
-    if (elCurHum && validHums.length) {
-        elCurHum.textContent = validHums[validHums.length - 1].toFixed(1);
-    }
-    if (elWind && validWinds.length) {
-        elWind.textContent = validWinds[validWinds.length - 1].toFixed(1);
     }
     if (elFlame && validFlames.length) {
         const latestFlame = validFlames[validFlames.length - 1];
@@ -308,7 +243,6 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
 
     // 1. Metric values to "--"
     const elTemp = $("#val-temp-current");
-    const elHum = $("#val-hum");
     const elSmoke = $("#val-smoke");
     const elFlameText = $("#val-flame-text");
     const elFlameDot = $("#val-flame-dot");
@@ -316,7 +250,6 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
     const iconWifi = $("#icon-wifi");
 
     if (elTemp) elTemp.textContent = "--";
-    if (elHum) elHum.textContent = "--";
     if (elSmoke) elSmoke.textContent = "--";
     if (elWifi) elWifi.textContent = "--";
     if (iconWifi) iconWifi.className = "w-3.5 h-3.5 text-slate-400";
@@ -331,11 +264,9 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
 
     // 2. Metric bars to 0%
     const barTemp = $("#bar-temp");
-    const barHum = $("#bar-hum");
     const barSmoke = $("#bar-smoke");
     const barFlame = $("#bar-flame");
     if (barTemp) barTemp.style.width = "0%";
-    if (barHum) barHum.style.width = "0%";
     if (barSmoke) barSmoke.style.width = "0%";
     if (barFlame) {
         barFlame.style.width = "0%";
@@ -378,13 +309,9 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
     }
 
     const elPeakTemp = $("#trend-peak-temp");
-    const elCurHum = $("#trend-cur-hum");
-    const elWind = $("#trend-cur-wind");
     const elFlame = $("#trend-cur-flame");
     const elAvgSmoke = $("#trend-avg-smoke");
     if (elPeakTemp) elPeakTemp.textContent = "--";
-    if (elCurHum) elCurHum.textContent = "--";
-    if (elWind) elWind.textContent = "--";
     if (elFlame) {
         elFlame.textContent = "--";
         elFlame.className = "text-lg sm:text-xl font-black text-white font-mono drop-shadow";
@@ -459,7 +386,6 @@ function setOnlineState(r) {
     const iconWifi = $("#icon-wifi");
 
     const barTemp = $("#bar-temp");
-    const barHum = $("#bar-hum");
     const barSmoke = $("#bar-smoke");
 
     // Push new telemetry points to rolling window
@@ -474,16 +400,6 @@ function setOnlineState(r) {
     } else {
         tempData.push(null);
         tempData.shift();
-    }
-    
-    if (r.humidity_percent != null) {
-        if (elHum) elHum.textContent = r.humidity_percent.toFixed(1);
-        if (barHum) barHum.style.width = Math.min(100, Math.max(0, r.humidity_percent)) + '%';
-        humData.push(r.humidity_percent);
-        humData.shift();
-    } else {
-        humData.push(null);
-        humData.shift();
     }
     
     if (r.smoke_adc != null) {
@@ -507,34 +423,16 @@ function setOnlineState(r) {
         smokeData.shift();
     }
 
-    // Wind Speed: use real hardware telemetry if available, or atmospheric breeze model
-    let currentWind = null;
-    if (r.wind_speed_kmh != null) {
-        currentWind = Number(r.wind_speed_kmh);
-    } else if (r.temperature_c != null) {
-        const t = (Date.now() / 15000);
-        currentWind = Number((12.4 + Math.sin(t) * 3.8 + Math.cos(t * 0.6) * 1.5).toFixed(1));
-    }
-    if (currentWind != null) {
-        windData.push(currentWind);
-        windData.shift();
-    } else {
-        windData.push(null);
-        windData.shift();
-    }
-
     // Flame Detection percentage: 0% = Safe/Clear, 100% = Active Flame Alert!
     const flameLevel = r.flame_detected ? 100 : 0;
     flameData.push(flameLevel);
     flameData.shift();
 
-    // Refresh Unified Trends Chart (All 5 Sensor Streams) & Live Stats
+    // Refresh Unified Trends Bar Chart (Temperature, Flame, Smoke) & Live Stats
     if (bigTempChart) {
         bigTempChart.data.datasets[0].data = tempData;
-        bigTempChart.data.datasets[1].data = humData;
-        bigTempChart.data.datasets[2].data = windData;
-        bigTempChart.data.datasets[3].data = flameData;
-        bigTempChart.data.datasets[4].data = smokeData;
+        bigTempChart.data.datasets[1].data = flameData;
+        bigTempChart.data.datasets[2].data = smokeData;
         bigTempChart.update();
         updateTrendStats();
     }
@@ -614,7 +512,7 @@ function setOnlineState(r) {
         addLog(`[ALERT] Critical threshold exceeded! Incident logged.`, 'alert');
     } else {
         if (Math.random() < 0.35) {
-            addLog(`Telemetry packet synced &bull; Temp: ${r.temperature_c ?? '?'}°C | Hum: ${r.humidity_percent ?? '?'}% | Smoke: ${r.smoke_adc ?? '?'} ADC`, 'data');
+            addLog(`Telemetry packet synced &bull; Temp: ${r.temperature_c ?? '?'}°C | Smoke: ${r.smoke_adc ?? '?'} ADC | Flame: ${r.flame_detected ? 'ACTIVE' : 'SAFE'}`, 'data');
         }
     }
 }

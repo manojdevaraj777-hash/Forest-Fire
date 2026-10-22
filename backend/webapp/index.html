@@ -299,8 +299,8 @@
                 </div>
             </section>
 
-            <!-- 4 Core Metric Cards (Balanced Height, Clean Proportions, Consistent Initial States) -->
-            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <!-- 3 Core Sensor Metric Cards (Temperature, Smoke, Flame) -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                 
                 <!-- 1. Temperature Card -->
                 <div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between border-amber-400/35 hover:border-amber-300/50 shadow-lg">
@@ -347,46 +347,6 @@
                         <div class="flex justify-between items-center text-[11px] font-bold text-slate-200 mt-1.5 drop-shadow">
                             <span>Safe Range: &lt; 45°C</span>
                             <span class="text-amber-300 font-mono">Real-time</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2. Air Humidity Card -->
-                <div class="glass-panel rounded-xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between border-sky-400/35 hover:border-sky-300/50 shadow-lg">
-                    <div class="flex justify-between items-start mb-2.5">
-                        <div>
-                            <h3 class="text-xs sm:text-sm font-black text-sky-300 uppercase tracking-wider flex items-center gap-1.5 drop-shadow">
-                                Air Humidity
-                            </h3>
-                            <p class="text-[11px] font-medium text-slate-200 mt-0.5 drop-shadow">Moisture Content</p>
-                        </div>
-                        <!-- Animated Water Droplet Logo -->
-                        <div class="p-1.5 rounded-lg bg-sky-500/25 border border-sky-400/40 shadow">
-                            <svg class="anim-humidity w-7 h-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <radialGradient id="dropGlow" cx="0.4" cy="0.4" r="0.6">
-                                        <stop offset="0%" stop-color="#f0f9ff"/>
-                                        <stop offset="45%" stop-color="#38bdf8"/>
-                                        <stop offset="100%" stop-color="#0284c7"/>
-                                    </radialGradient>
-                                </defs>
-                                <path d="M16 4C16 4 8 15 8 20.5C8 24.64 11.36 28 15.5 28C19.64 28 23 24.64 23 20.5C23 15 16 4 16 4Z" fill="url(#dropGlow)" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
-                                <path d="M12.5 18C12 19 12 20.5 12.8 22.2C13.2 23 13.8 23.6 14.5 24.2" stroke="rgba(255,255,255,0.95)" stroke-width="1.4" stroke-linecap="round"/>
-                                <circle cx="14" cy="13" r="1.3" fill="rgba(255,255,255,0.95)"/>
-                            </svg>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex items-baseline gap-1.5">
-                            <span id="val-hum" class="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.85)]">--</span>
-                            <span class="text-xl sm:text-2xl text-sky-300 font-extrabold drop-shadow">%</span>
-                        </div>
-                        <div class="metric-bar">
-                            <div id="bar-hum" class="metric-fill bg-gradient-to-r from-sky-400 to-cyan-300 shadow-[0_0_8px_rgba(56,189,248,0.9)]" style="width: 0%;"></div>
-                        </div>
-                        <div class="flex justify-between items-center text-[11px] font-bold text-slate-200 mt-1.5 drop-shadow">
-                            <span>Target: &gt; 30% RH</span>
-                            <span class="text-sky-300 font-mono">Relative</span>
                         </div>
                     </div>
                 </div>
@@ -497,13 +457,13 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3.5">
                     <div class="flex items-center gap-2.5">
                         <div class="p-2 rounded-xl bg-emerald-500/25 border border-emerald-400/40 shadow">
-                            <i data-lucide="line-chart" class="w-5 h-5 text-emerald-300"></i>
+                            <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-300"></i>
                         </div>
                         <div>
                             <h2 class="text-base sm:text-lg font-black text-white drop-shadow">
-                                Environmental Telemetry Graph
+                                Environmental Telemetry Bar Chart
                             </h2>
-                            <p class="text-xs text-emerald-300 font-semibold drop-shadow">Live Multi-Sensor Temporal Correlation (Temperature, Humidity, Wind, Flame & Smoke)</p>
+                            <p class="text-xs text-emerald-300 font-semibold drop-shadow">Live Multi-Sensor Telemetry (Temperature, Smoke & Flame)</p>
                         </div>
                     </div>
                     
@@ -513,19 +473,13 @@
                             All Sensors
                         </button>
                         <button id="trend-filter-temp" onclick="setTrendsFilter('temp')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
-                            Temp
+                            Temperature
                         </button>
-                        <button id="trend-filter-hum" onclick="setTrendsFilter('hum')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
-                            Humidity
-                        </button>
-                        <button id="trend-filter-wind" onclick="setTrendsFilter('wind')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
-                            Wind
+                        <button id="trend-filter-smoke" onclick="setTrendsFilter('smoke')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+                            Smoke MQ-2
                         </button>
                         <button id="trend-filter-flame" onclick="setTrendsFilter('flame')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
                             Flame
-                        </button>
-                        <button id="trend-filter-smoke" onclick="setTrendsFilter('smoke')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
-                            Smoke
                         </button>
                     </div>
                 </div>
@@ -546,22 +500,22 @@
                             <i data-lucide="bell" class="w-4 h-4 text-rose-300"></i>
                         </div>
                         <div>
-                            <h2 class="text-base font-bold text-white drop-shadow">Security & Anomaly Alerts</h2>
-                            <p class="text-xs text-slate-200">Recorded telemetry anomalies and threshold alerts</p>
+                            <h2 class="text-base font-bold text-white drop-shadow">Fire Alerts</h2>
+                            <p class="text-xs text-slate-200">Recent fire warnings and sensor threshold alerts</p>
                         </div>
                     </div>
                     <button onclick="fetchAlerts()" class="px-3.5 py-1.5 bg-rose-600/40 hover:bg-rose-500/50 border border-rose-400/50 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-2 shadow">
-                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Incident Log
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Alerts
                     </button>
                 </div>
                 <div class="p-4 overflow-x-auto bg-black/40">
                     <table class="w-full text-left text-xs sm:text-sm text-slate-100">
                         <thead>
                             <tr class="text-emerald-300 border-b border-white/20 uppercase tracking-wider font-bold">
-                                <th class="pb-2.5 px-3">Timestamp (UTC)</th>
-                                <th class="pb-2.5 px-3">Severity / Anomaly</th>
+                                <th class="pb-2.5 px-3">Date & Time</th>
+                                <th class="pb-2.5 px-3">Alert Type</th>
                                 <th class="pb-2.5 px-3">Temperature (°C)</th>
-                                <th class="pb-2.5 px-3">Smoke (ADC)</th>
+                                <th class="pb-2.5 px-3">Smoke Level</th>
                             </tr>
                         </thead>
                         <tbody id="alerts-tbody">
@@ -657,22 +611,22 @@
                 </div>
 
                 <!-- 2. DHT11 Sensor -->
-                <div class="glass-panel hardware-card rounded-xl p-4 flex flex-col justify-between border-white/20 hover:border-sky-400/60 transition-all">
+                <div class="glass-panel hardware-card rounded-xl p-4 flex flex-col justify-between border-white/20 hover:border-amber-400/60 transition-all">
                     <div>
                         <div class="hardware-img-container mb-3">
-                            <img src="/images/dht11_sensor.jpg" alt="DHT11 Temperature and Humidity Sensor" loading="lazy">
-                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-sky-400/50 text-[10px] font-mono text-sky-300 font-bold">
+                            <img src="/images/dht11_sensor.jpg" alt="DHT11 Temperature Sensor" loading="lazy">
+                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-md border border-amber-400/50 text-[10px] font-mono text-amber-300 font-bold">
                                 PIN D4 (GPIO2)
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between mb-1">
-                            <h3 class="text-sm font-bold text-white drop-shadow">DHT11 Sensor</h3>
+                            <h3 class="text-sm font-bold text-white drop-shadow">DHT11 Temperature Sensor</h3>
                             <span id="hw-badge-dht11" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50">STANDBY</span>
                         </div>
-                        <p class="text-[11px] text-sky-300 font-bold uppercase tracking-wider mb-2">Temp & Humidity Probe</p>
+                        <p class="text-[11px] text-amber-300 font-bold uppercase tracking-wider mb-2">Ambient Thermal Probe</p>
                         <p class="text-xs text-slate-200 leading-relaxed mb-3">
-                            Calibrated composite sensor measuring ambient temperature and humidity to assess drought, heat waves, and dry brush risks.
+                            Precision digital temperature sensor measuring ambient thermal variations to detect heat anomalies and fire outbreaks.
                         </p>
                     </div>
 
@@ -682,12 +636,12 @@
                             <span class="text-white font-bold">0–50°C (±2°C)</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-300 font-medium">Humidity:</span>
-                            <span class="text-white font-bold">20–90% RH</span>
+                            <span class="text-slate-300 font-medium">Protocol:</span>
+                            <span class="text-amber-300 font-bold">Single-Bus Digital</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-300 font-medium">Protocol:</span>
-                            <span class="text-sky-300 font-bold">Single-Bus Digital</span>
+                            <span class="text-slate-300 font-medium">Supply:</span>
+                            <span class="text-white font-bold">3.3V – 5.0V DC</span>
                         </div>
                     </div>
                 </div>
@@ -800,7 +754,7 @@
 
     </main>
 
-    <script src="app.js?v=26"></script>
+    <script src="app.js?v=30"></script>
     <script>
         function switchTab(tabId) {
             ['home', 'trends', 'alerts', 'actionplan', 'hardware'].forEach(t => {
