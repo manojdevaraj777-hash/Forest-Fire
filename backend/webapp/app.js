@@ -547,6 +547,6 @@ async function fetchReadings() {
     }
 }
 
-addLog("Forest Guard Telemetry Daemon Active [REST API]", "info");
+addLog("Forest Sentry Telemetry Daemon Active [REST API]", "info");
 setInterval(fetchReadings, POLL_MS);
 fetchReadings();
