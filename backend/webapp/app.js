@@ -568,220 +568,76 @@ function setOnlineState(r) {
     }
 }
 
-let lastActionPlanGeneratedTime = 0;
-let isEmergencyBannerVisible = false;
-let currentActionPlanText = "";
-
-function renderActionPlanFull(p, sensorData) {
-    if (!p) return;
-    currentActionPlanText = p.formatted || "";
-
-    const actionPlanView = $("#action-plan-content");
-    if (!actionPlanView) return;
-
-    const isEmerg = p.is_emergency;
-    const borderStyle = isEmerg ? "border-rose-500/60 shadow-[0_0_25px_rgba(244,63,94,0.3)] bg-rose-950/40" : "border-emerald-500/40 bg-emerald-950/20";
-    const badgeStyle = isEmerg ? "bg-rose-500 text-white" : "bg-emerald-500 text-white";
-
-    actionPlanView.innerHTML = `
-        <div class="space-y-4">
-            <!-- 1. Executive Incident Directive -->
-            <div class="p-4 sm:p-5 rounded-xl border ${borderStyle} backdrop-blur-md">
-                <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/15">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="px-2.5 py-0.5 rounded text-xs font-black uppercase tracking-wider ${badgeStyle} shadow">
-                            ${p.threat_level}
-                        </span>
-                        <span class="text-xs font-bold text-amber-300 font-mono bg-black/50 px-2 py-0.5 rounded border border-white/10">
-                            ${p.fire_type || 'Standard Regime'}
-                        </span>
-                    </div>
-                    <span class="text-[11px] font-mono text-slate-300">INCIDENT ID: FS-${Date.now().toString().slice(-6)}</span>
-                </div>
-                
-                <h3 class="text-base sm:text-lg font-black text-white mt-2 leading-snug drop-shadow">
-                    ${p.status}
-                </h3>
-                
-                <div class="mt-2.5 p-3 rounded-lg bg-black/60 border border-white/15 text-xs sm:text-sm font-semibold text-rose-200 flex items-start gap-2 shadow-inner">
-                    <span class="text-rose-400 font-bold shrink-0 text-base">&bull;</span>
-                    <span>${p.directive || p.explanation}</span>
-                </div>
-
-                <p class="text-xs text-slate-300 mt-2 leading-relaxed">
-                    ${p.diagnosis || p.explanation}
-                </p>
-            </div>
-
-            <!-- 2. Tactical Operations Matrix (4 Structured Columns) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- Extinguisher Specifications -->
-                <div class="p-3.5 rounded-xl bg-black/50 border border-amber-400/30 shadow">
-                    <h4 class="text-xs font-black text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i>
-                        Fire Suppression & Extinguisher Matrix
-                    </h4>
-                    <div class="space-y-1.5 text-xs text-slate-200">
-                        <p><strong class="text-amber-200">Fire Class:</strong> ${p.extinguisher ? p.extinguisher.class : 'Class A / ABC'}</p>
-                        <p><strong class="text-amber-200">Recommended Agent:</strong> ${p.extinguisher ? p.extinguisher.agent : 'Pressurized Water & ABC Dry Chemical'}</p>
-                        <p class="text-[11px] text-amber-300/90 font-medium italic mt-1 bg-amber-950/40 p-2 rounded border border-amber-500/20">
-                            ⚠️ Warning: ${p.extinguisher ? p.extinguisher.warning : 'Do not stand downwind during discharge.'}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Evacuation Vector & Topographic Hazards -->
-                <div class="p-3.5 rounded-xl bg-black/50 border border-cyan-400/30 shadow">
-                    <h4 class="text-xs font-black text-cyan-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <i data-lucide="wind" class="w-4 h-4 text-cyan-400"></i>
-                        Evacuation Vector & Topographic Dynamics
-                    </h4>
-                    <div class="space-y-1.5 text-xs text-slate-200">
-                        <p><strong class="text-cyan-200">Escape Direction:</strong> ${p.evacuation ? p.evacuation.vector : 'Move upwind/crosswind'}</p>
-                        <p><strong class="text-cyan-200">Topographic Rule:</strong> ${p.evacuation ? p.evacuation.terrain_rule : 'Avoid saddles and narrow canyons'}</p>
-                        <p><strong class="text-cyan-200">Designated Safety Zone:</strong> ${p.evacuation ? p.evacuation.safety_zone : 'Cleared mineral clearings'}</p>
-                    </div>
-                </div>
-
-                <!-- Fuel Break & Perimeter Containment -->
-                <div class="p-3.5 rounded-xl bg-black/50 border border-emerald-400/30 shadow">
-                    <h4 class="text-xs font-black text-emerald-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <i data-lucide="scissors" class="w-4 h-4 text-emerald-400"></i>
-                        Defensible Fuel Break & PPE Directives
-                    </h4>
-                    <div class="space-y-1.5 text-xs text-slate-200">
-                        <p><strong class="text-emerald-200">Fuel Break Width:</strong> ${p.fuel_break || '1.5x flame height fuel starvation break.'}</p>
-                        <p><strong class="text-emerald-200">Personal Protective Equipment (PPE):</strong> ${p.ppe || 'P100 / N95 respirator against CO and smoke particulates.'}</p>
-                    </div>
-                </div>
-
-                <!-- Emergency Dispatch Hotline Call Center -->
-                <div class="p-3.5 rounded-xl bg-black/50 border border-rose-400/30 shadow">
-                    <h4 class="text-xs font-black text-rose-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <i data-lucide="phone-call" class="w-4 h-4 text-rose-400"></i>
-                        Emergency Dispatch Direct Lines
-                    </h4>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        ${(p.hotlines || []).map(h => `
-                            <a href="tel:${h.number.split(' ')[0]}" class="p-2 rounded-lg bg-rose-950/50 hover:bg-rose-900/70 border border-rose-400/30 text-slate-100 flex flex-col justify-between transition-colors shadow">
-                                <span class="text-[10px] text-rose-300 font-bold uppercase truncate">${h.name}</span>
-                                <span class="text-base font-black text-white font-mono mt-0.5">${h.number}</span>
-                                <span class="text-[9px] text-slate-300 truncate">${h.role}</span>
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Immediate Step-by-Step Tactical Action Steps -->
-            <div class="p-4 rounded-xl bg-black/55 border border-white/15 shadow">
-                <h4 class="text-xs font-black text-amber-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                    <i data-lucide="list-ordered" class="w-4 h-4 text-amber-400"></i>
-                    Incident Tactical Action Checklist
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    ${(p.actions || []).map((a, i) => `
-                        <div class="p-2.5 rounded-lg bg-black/60 border border-white/15 text-slate-100 flex items-start gap-2 shadow">
-                            <span class="px-1.5 py-0.5 rounded bg-emerald-600/40 text-emerald-300 font-mono font-bold text-[10px] shrink-0">${i+1}</span>
-                            <span class="leading-relaxed font-medium">${a}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        </div>
-    `;
-    if (window.lucide) lucide.createIcons();
-}
-
-window.loadActionPlanView = async function() {
-    const actionPlanView = $("#action-plan-content");
-    if (actionPlanView) {
-        actionPlanView.innerHTML = `
-            <div class="p-6 text-center text-slate-300">
-                <span class="animate-pulse text-emerald-400 font-bold flex items-center justify-center gap-2">
-                    <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Analyzing live telemetry and generating security protocol...
-                </span>
-            </div>
-        `;
-        if (window.lucide) lucide.createIcons();
-    }
-    try {
-        const res = await fetch("/api/action/suggest");
-        const data = await res.json();
-        if (data && data.plan) {
-            renderActionPlanFull(data.plan, data.sensor_data);
-        } else if (data && data.analysis) {
-            if (actionPlanView) {
-                actionPlanView.innerHTML = `<div class="p-4 rounded-xl bg-black/60 whitespace-pre-wrap font-mono text-xs text-slate-200">${data.analysis}</div>`;
-            }
-        }
-    } catch (e) {
-        if (actionPlanView) {
-            actionPlanView.innerHTML = `<div class="p-4 rounded-xl bg-rose-950/50 border border-rose-400/50 text-rose-200 text-xs">Failed to connect to AI action plan engine. Please verify backend link.</div>`;
-        }
-    }
-};
-
-window.copyActionPlan = function() {
-    if (!currentActionPlanText) {
-        alert("Action plan text is empty.");
-        return;
-    }
-    navigator.clipboard.writeText(currentActionPlanText).then(() => {
-        alert("✅ Wildfire Action Plan copied to clipboard!");
-    }).catch(() => {
-        const ta = document.createElement("textarea");
-        ta.value = currentActionPlanText;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        alert("✅ Wildfire Action Plan copied to clipboard!");
-    });
-};
-
 function updateSituationRibbon(r) {
-    const banner = $("#ai-emergency-banner");
-    const threatBadge = $("#ai-threat-badge");
-    const solutionTitle = $("#ai-solution-title");
-    const solutionSub = $("#ai-solution-sub");
+    const banner = $("#situation-banner");
+    const badge = $("#situation-badge");
+    const icon = $("#situation-icon");
+    const title = $("#situation-title");
+    const comment = $("#situation-comment");
 
-    if (!banner || !threatBadge || !solutionTitle || !solutionSub) return;
+    if (!banner || !badge || !title || !comment) return;
 
     const hasFlame = Boolean(r.flame_detected);
-    const hasSmoke = Boolean(r.smoke_adc && r.smoke_adc > 400);
-    const hasTemp = Boolean(r.temperature_c && r.temperature_c > 45);
+    const smokeVal = r.smoke_adc ?? 0;
+    const hasSmoke = smokeVal > 400;
+    const hasElevatedSmoke = smokeVal > 250;
+    const tempVal = r.temperature_c ?? 0;
+    const hasTemp = tempVal > 45;
 
     if (hasFlame && hasSmoke) {
         banner.className = "glass-panel rounded-xl p-3 sm:p-3.5 border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.35)] bg-rose-950/70 transition-all";
-        threatBadge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-rose-600 text-white animate-bounce shrink-0 shadow";
-        threatBadge.textContent = "CRITICAL FIRE";
-        solutionTitle.textContent = "HIGH FLAME & DENSE SMOKE DETECTED!";
-        solutionSub.innerHTML = "<strong class='text-rose-300'>WHAT TO DO:</strong> 1. Evacuate 500m upwind immediately. 2. Call Emergency 101 & 112. 3. Scrape 4m mineral soil fuel break.";
+        badge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-rose-600 text-white animate-bounce shrink-0 shadow";
+        badge.textContent = "CRITICAL FIRE";
+        title.className = "text-xs font-black text-rose-300 truncate";
+        title.textContent = "HIGH FLAME & DENSE SMOKE DETECTED!";
+        comment.className = "text-[11px] text-rose-100 font-semibold truncate mt-0.5";
+        comment.innerHTML = "<strong class='text-rose-300'>WHAT TO DO:</strong> 1. Evacuate 500m upwind immediately. 2. Call Emergency 101 / 112. 3. Clear 4m mineral soil fuel break.";
+        if (icon) icon.className = "w-3.5 h-3.5 text-rose-400";
     } else if (hasFlame) {
         banner.className = "glass-panel rounded-xl p-3 sm:p-3.5 border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.35)] bg-rose-950/70 transition-all";
-        threatBadge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-rose-600 text-white animate-pulse shrink-0 shadow";
-        threatBadge.textContent = "HIGH FLAME";
-        solutionTitle.textContent = "ACTIVE FLAME DETECTED (IR SENSOR TRIGGERED)";
-        solutionSub.innerHTML = "<strong class='text-rose-300'>WHAT TO DO:</strong> 1. Discharge ABC dry chemical / water directly at base of flame. 2. Evacuate 200m crosswind. 3. Alert Fire Dept (101) & Wildfire Desk (1926).";
+        badge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-rose-600 text-white animate-pulse shrink-0 shadow";
+        badge.textContent = "HIGH FLAME";
+        title.className = "text-xs font-black text-rose-300 truncate";
+        title.textContent = "ACTIVE FLAME DETECTED (IR SENSOR TRIGGERED)";
+        comment.className = "text-[11px] text-rose-100 font-semibold truncate mt-0.5";
+        comment.innerHTML = "<strong class='text-rose-300'>WHAT TO DO:</strong> 1. Aim Class ABC / CO₂ extinguisher directly at flame base. 2. Evacuate 200m upwind. 3. Call 101 Fire / 112 SOS.";
+        if (icon) icon.className = "w-3.5 h-3.5 text-rose-400";
     } else if (hasSmoke) {
         banner.className = "glass-panel rounded-xl p-3 sm:p-3.5 border-purple-500/70 shadow-[0_0_20px_rgba(192,132,252,0.35)] bg-purple-950/70 transition-all";
-        threatBadge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-purple-600 text-white animate-pulse shrink-0 shadow";
-        threatBadge.textContent = "HIGH SMOKE";
-        solutionTitle.textContent = `DENSE COMBUSTION SMOKE DETECTED (${r.smoke_adc} ADC)`;
-        solutionSub.innerHTML = "<strong class='text-purple-300'>WHAT TO DO:</strong> 1. Don N95/P100 respirator mask against CO. 2. Inspect sector for smoldering root/duff embers. 3. Deploy soaking water wet-line.";
+        badge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-purple-600 text-white animate-pulse shrink-0 shadow";
+        badge.textContent = "HIGH SMOKE";
+        title.className = "text-xs font-black text-purple-300 truncate";
+        title.textContent = `DENSE COMBUSTION SMOKE DETECTED (${smokeVal} ADC)`;
+        comment.className = "text-[11px] text-purple-100 font-semibold truncate mt-0.5";
+        comment.innerHTML = "<strong class='text-purple-300'>WHAT TO DO:</strong> 1. Stay low below smoke layer. 2. Cover airways with wet cloth/mask. 3. Douse smoldering timber/embers with water.";
+        if (icon) icon.className = "w-3.5 h-3.5 text-purple-400";
+    } else if (hasElevatedSmoke) {
+        banner.className = "glass-panel rounded-xl p-3 sm:p-3.5 border-amber-400/50 bg-amber-950/40 transition-all";
+        badge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-amber-500/40 text-amber-200 border border-amber-400/50 shrink-0";
+        badge.textContent = "SMOKE ELEVATED";
+        title.className = "text-xs font-bold text-amber-200 truncate";
+        title.textContent = `Elevated Smoke Reading (${smokeVal} ADC)`;
+        comment.className = "text-[11px] text-slate-200 font-medium truncate mt-0.5";
+        comment.innerHTML = "<strong class='text-amber-300'>WHAT TO DO:</strong> Inspect vicinity for campfire remnants, agricultural burn, or early smoldering combustion.";
+        if (icon) icon.className = "w-3.5 h-3.5 text-amber-400";
     } else if (hasTemp) {
         banner.className = "glass-panel rounded-xl p-3 sm:p-3.5 border-amber-500/70 shadow bg-amber-950/70 transition-all";
-        threatBadge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-amber-600 text-white shrink-0 shadow";
-        threatBadge.textContent = "HIGH TEMP";
-        solutionTitle.textContent = `THERMAL ANOMALY SPIKE (${r.temperature_c.toFixed(1)}°C)`;
-        solutionSub.innerHTML = "<strong class='text-amber-300'>WHAT TO DO:</strong> 1. Hydrate dry forest duff with water mist. 2. Suspend motorized hot work. 3. Monitor for spark ignition.";
+        badge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-amber-600 text-white shrink-0 shadow";
+        badge.textContent = "HIGH TEMP";
+        title.className = "text-xs font-bold text-amber-200 truncate";
+        title.textContent = `THERMAL ANOMALY SPIKE (${tempVal.toFixed(1)}°C)`;
+        comment.className = "text-[11px] text-slate-200 font-medium truncate mt-0.5";
+        comment.innerHTML = "<strong class='text-amber-300'>WHAT TO DO:</strong> Hydrate dry forest duff with water mist. Suspend motorized hot work. Monitor for spark ignition.";
+        if (icon) icon.className = "w-3.5 h-3.5 text-amber-400";
     } else {
         banner.className = "glass-panel rounded-xl p-3 sm:p-3.5 border-white/20 shadow-md bg-black/55 transition-all";
-        threatBadge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 shrink-0";
-        threatBadge.textContent = "NORMAL";
-        solutionTitle.textContent = "All Environmental Parameters Safe";
-        solutionSub.textContent = "Sensors operating within safe baseline. Live 400ms continuous monitoring active.";
+        badge.className = "px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider bg-emerald-500/30 text-emerald-300 border border-emerald-400/50 shrink-0";
+        badge.textContent = "SAFE";
+        title.className = "text-xs font-bold text-white truncate";
+        title.textContent = "All Environmental Parameters Normal";
+        comment.className = "text-[11px] text-slate-200 font-medium truncate mt-0.5";
+        comment.textContent = "Sensors operating within safe baseline. Live 400ms continuous monitoring active.";
+        if (icon) icon.className = "w-3.5 h-3.5 text-emerald-400";
     }
 }
 
