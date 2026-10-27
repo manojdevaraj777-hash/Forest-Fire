@@ -1,4 +1,4 @@
-const POLL_MS = 1000;
+const POLL_MS = 400; // Ultra-Fast 400ms polling for instant live sensor detection
 const $ = (s) => document.querySelector(s);
 
 if (window.lucide) {
@@ -56,6 +56,10 @@ if (bctx) {
     smokeGrad.addColorStop(0, 'rgba(192, 132, 252, 0.40)');
     smokeGrad.addColorStop(1, 'rgba(192, 132, 252, 0.01)');
 
+    const flameGrad = bigCtx.createLinearGradient(0, 0, 0, 360);
+    flameGrad.addColorStop(0, 'rgba(244, 63, 94, 0.45)');
+    flameGrad.addColorStop(1, 'rgba(244, 63, 94, 0.01)');
+
     bigTempChart = new Chart(bigCtx, {
         type: 'line',
         data: {
@@ -90,6 +94,21 @@ if (bctx) {
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 1.5,
                     yAxisID: 'y1'
+                },
+                {
+                    label: 'Flame Degree (° Intensity)',
+                    data: flameData,
+                    borderColor: '#f43f5e', 
+                    backgroundColor: flameGrad,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.15,
+                    pointRadius: 2.5,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#f43f5e',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1.5,
+                    yAxisID: 'y'
                 }
             ]
         },
@@ -120,8 +139,14 @@ if (bctx) {
                     borderColor: 'rgba(255, 255, 255, 0.25)',
                     borderWidth: 1,
                     padding: 12,
-                    titleFont: { size: 12, weight: 'bold' },
-                    bodyFont: { size: 11 }
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 2) {
+                                return `Flame Degree: ${context.parsed.y}° (${context.parsed.y > 0 ? 'CRITICAL FIRE DETECTED!' : 'Normal / Safe'})`;
+                            }
+                            return `${context.dataset.label}: ${context.parsed.y}`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -135,12 +160,12 @@ if (bctx) {
                     display: true, 
                     position: 'left',
                     min: 0, 
-                    max: 80, 
+                    max: 100, 
                     grid: { color: 'rgba(255, 255, 255, 0.12)' }, 
                     ticks: { color: '#fbbf24', font: { size: 11, weight: 'bold' } },
                     title: {
                         display: true,
-                        text: 'Temperature (°C)',
+                        text: 'Temperature (°C) / Flame Degree (0°-100°)',
                         color: '#fbbf24',
                         font: { weight: 'bold', size: 11 }
                     }
@@ -165,12 +190,12 @@ if (bctx) {
     });
 }
 
-// Interactive Filter function for Trends tab (Temperature & Smoke Only — Flame removed)
+// Interactive Filter function for Trends tab (Temperature, Smoke & Flame Degree)
 window.setTrendsFilter = function(filterMode) {
     if (!bigTempChart) return;
     activeTrendsFilter = filterMode;
 
-    ['all', 'temp', 'smoke'].forEach(k => {
+    ['all', 'temp', 'smoke', 'flame'].forEach(k => {
         const btn = $(`#trend-filter-${k}`);
         if (btn) {
             if (k === filterMode) {
@@ -186,11 +211,11 @@ window.setTrendsFilter = function(filterMode) {
     if (filterMode === 'all') {
         bigTempChart.data.datasets.forEach(ds => ds.hidden = false);
     } else if (filterMode === 'temp') {
-        bigTempChart.data.datasets[0].hidden = false;
-        bigTempChart.data.datasets[1].hidden = true;
+        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 0));
     } else if (filterMode === 'smoke') {
-        bigTempChart.data.datasets[0].hidden = true;
-        bigTempChart.data.datasets[1].hidden = false;
+        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 1));
+    } else if (filterMode === 'flame') {
+        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 2));
     }
     bigTempChart.update();
 };
@@ -431,10 +456,11 @@ function setOnlineState(r) {
     flameData.push(flameLevel);
     flameData.shift();
 
-    // Refresh Unified Trends Line Chart (Temperature & Smoke — Flame removed from chart list)
+    // Refresh Unified Trends Line Chart (Temperature, Smoke, Flame Degree)
     if (bigTempChart) {
         bigTempChart.data.datasets[0].data = tempData;
         bigTempChart.data.datasets[1].data = smokeData;
+        bigTempChart.data.datasets[2].data = flameData;
         bigTempChart.update();
         updateTrendStats();
     }
@@ -445,7 +471,7 @@ function setOnlineState(r) {
     if (trendLinkDot) trendLinkDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]";
     if (trendLinkText) {
         trendLinkText.className = "text-xs sm:text-sm font-black text-white font-mono drop-shadow";
-        trendLinkText.textContent = "ONLINE (1000ms Poll)";
+        trendLinkText.textContent = "ONLINE (400ms Ultra-Fast Poll)";
     }
 
     // WiFi signal pill in header

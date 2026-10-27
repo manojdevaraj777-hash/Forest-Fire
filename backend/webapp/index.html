@@ -496,11 +496,11 @@
                             <h2 class="text-base sm:text-lg font-black text-white drop-shadow">
                                 Environmental Telemetry Line Chart
                             </h2>
-                            <p class="text-xs text-emerald-300 font-semibold drop-shadow">Live Continuous Telemetry Stream (Temperature & Smoke)</p>
+                            <p class="text-xs text-emerald-300 font-semibold drop-shadow">Live Continuous Telemetry Stream (Temperature, Smoke & Flame Degree)</p>
                         </div>
                     </div>
                     
-                    <!-- Clean Stream Filter Toggles (Flame removed from trend chart list) -->
+                    <!-- Clean Stream Filter Toggles -->
                     <div class="flex flex-wrap items-center gap-1.5 bg-black/55 p-1 rounded-xl border border-white/25 text-xs shadow-inner">
                         <button id="trend-filter-all" onclick="setTrendsFilter('all')" class="trend-btn active px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
                             All Trends
@@ -510,6 +510,9 @@
                         </button>
                         <button id="trend-filter-smoke" onclick="setTrendsFilter('smoke')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
                             Smoke MQ-2
+                        </button>
+                        <button id="trend-filter-flame" onclick="setTrendsFilter('flame')" class="trend-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-all">
+                            Flame Degree (°)
                         </button>
                     </div>
                 </div>

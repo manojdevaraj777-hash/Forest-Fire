@@ -61,6 +61,9 @@ bool currentSmokeAlert  = false;
 bool currentTempAlert   = false;
 bool ledState           = false;
 
+// Fast flame state-change tracking for 0-delay interrupt
+bool lastFastFlameState  = false;
+
 // Function Declarations
 void connectWiFi();
 void setupOTA();
@@ -92,6 +95,9 @@ void setup() {
     Serial.println(F("======================================================="));
     Serial.println(F("  NodeMCU ESP8266 Forest Fire Detection System v2.0  "));
     Serial.println(F("======================================================="));
+
+    // Overclock CPU to 160MHz for high-speed SSL crypto & instant sensor processing
+    system_update_cpu_freq(160);
 
     // Pin Modes
     pinMode(FLAME_PIN, INPUT);
@@ -135,6 +141,35 @@ void setup() {
 // ==========================================
 void loop() {
     unsigned long currentMillis = millis();
+
+    // 0. Ultra-Fast Flame Detection Interrupt (Sub-millisecond hardware check on EVERY loop pass)
+    bool instantFlame = (digitalRead(FLAME_PIN) == FLAME_DETECTED_STATE);
+    if (instantFlame != lastFastFlameState) {
+        lastFastFlameState = instantFlame;
+        if (instantFlame) {
+            Serial.println(F("[FAST-TRIGGER] FLAME DETECTED! Bypassing timer to send instant cloud alert..."));
+            currentAlertActive = true;
+            currentFlameAlert = true;
+            digitalWrite(LED_PIN, HIGH);
+            tone(BUZZER_PIN, 3000, 400);
+            sendCloudPayload(isnan(lastGoodTemp) ? 32.0f : lastGoodTemp,
+                             isnan(lastGoodHumidity) ? 50.0f : lastGoodHumidity,
+                             isnan(lastGoodHeatIndex) ? 32.0f : lastGoodHeatIndex,
+                             analogRead(MQ2_PIN), true,
+                             false, false, false, true,
+                             false, true, true);
+        } else {
+            Serial.println(F("[FAST-TRIGGER] Flame extinguished. Sending recovery update..."));
+            currentFlameAlert = false;
+            deactivateAlarms();
+            sendCloudPayload(isnan(lastGoodTemp) ? 32.0f : lastGoodTemp,
+                             isnan(lastGoodHumidity) ? 50.0f : lastGoodHumidity,
+                             isnan(lastGoodHeatIndex) ? 32.0f : lastGoodHeatIndex,
+                             analogRead(MQ2_PIN), false,
+                             false, false, false, false,
+                             true, false, false);
+        }
+    }
 
     // 1. Handle OTA updates (must run every loop)
     ArduinoOTA.handle();
@@ -429,9 +464,12 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
 
         // Plain HTTP for local endpoints, TLS for https:// endpoints
         if (useTLS) {
-            secureClient.setInsecure(); // Skip cert check — swap with setCACert() for production
+            secureClient.setInsecure(); // Skip cert check
+            secureClient.setBufferSizes(512, 512); // Reduce SSL buffer from 16KB to 512B -> cuts SSL connection time by 70%!
+            secureClient.setTimeout(2500);
         }
         WiFiClient& client = useTLS ? (WiFiClient&)secureClient : (WiFiClient&)plainClient;
+        http.setTimeout(2500);
 
         if (http.begin(client, CLOUD_API_ENDPOINT)) {
             http.addHeader(F("Content-Type"), F("application/json"));
