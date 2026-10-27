@@ -517,6 +517,15 @@ function setOnlineState(r) {
     }
 }
 
+function parsePacketTime(isoStr) {
+    if (!isoStr) return NaN;
+    if (typeof isoStr !== 'string') return new Date(isoStr).getTime();
+    if (isoStr.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(isoStr)) {
+        return new Date(isoStr).getTime();
+    }
+    return new Date(isoStr + 'Z').getTime();
+}
+
 async function fetchReadings() {
     try {
         const res = await fetch("/api/readings");
@@ -528,16 +537,16 @@ async function fetchReadings() {
         }
 
         const serverHeader = res.headers.get("X-Server-Time");
-        const serverTime = serverHeader ? new Date(serverHeader).getTime() : Date.now();
+        const serverTime = serverHeader ? parsePacketTime(serverHeader) : Date.now();
 
         const latest = data[0];
-        const packetIso = latest.received_at.endsWith('Z') ? latest.received_at : latest.received_at + 'Z';
-        const packetTime = new Date(packetIso).getTime();
+        const packetTime = parsePacketTime(latest.received_at);
         const ageSec = (serverTime - packetTime) / 1000;
 
-        // If newest packet is older than 45 seconds, hardware has disconnected
-        if (ageSec > 45 || isNaN(ageSec)) {
-            setOfflineState(`Hardware disconnected (Last packet was ${Math.round(ageSec)}s ago)`);
+        // If newest packet is older than 75 seconds or invalid, hardware has disconnected
+        if (isNaN(ageSec) || ageSec > 75) {
+            const ageDisplay = isNaN(ageSec) ? '?' : Math.max(0, Math.round(ageSec));
+            setOfflineState(`Hardware disconnected (Last packet was ${ageDisplay}s ago)`);
         } else {
             setOnlineState(latest);
         }

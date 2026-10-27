@@ -193,7 +193,7 @@ def receive_reading():
 
     readings = payload.get("sensor_readings", {})
     triggers = payload.get("alert_triggers", {})
-    received_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    received_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     alert = payload.get("alert") or False
     buzzer_active = 1 if payload.get("buzzer_active") else 0
     led_active = 1 if payload.get("led_active") else 0
@@ -260,7 +260,7 @@ def receive_reading():
 def get_readings():
     rows = get_db().execute("SELECT * FROM readings ORDER BY id DESC LIMIT 100").fetchall()
     resp = jsonify([dict(r) for r in rows])
-    resp.headers["X-Server-Time"] = datetime.now(timezone.utc).isoformat()
+    resp.headers["X-Server-Time"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return resp
 
 
@@ -273,7 +273,7 @@ def system_status():
             "status": "standby",
             "connected": False,
             "message": "Awaiting hardware connection. No sensor data in database.",
-            "server_time": now_utc.isoformat()
+            "server_time": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
         })
     r = dict(row)
     try:
@@ -284,13 +284,13 @@ def system_status():
     except Exception:
         age_sec = 999999
 
-    connected = age_sec <= 45
+    connected = age_sec <= 75
     return jsonify({
         "status": "online" if connected else "offline",
         "connected": connected,
         "age_seconds": round(age_sec, 1),
         "latest_reading": r if connected else None,
-        "server_time": now_utc.isoformat()
+        "server_time": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     })
 
 

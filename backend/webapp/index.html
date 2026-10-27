@@ -440,7 +440,7 @@
                             <div id="bar-flame" class="metric-fill bg-slate-500" style="width: 0%;"></div>
                         </div>
                         <div class="flex justify-between items-center text-[11px] font-bold text-slate-200 mt-1.5 drop-shadow">
-                            <span>Pin D2 (GPIO4)</span>
+                            <span>Pin D1 (GPIO5)</span>
                             <span class="text-emerald-300 font-mono">Active Low</span>
                         </div>
                     </div>
@@ -782,6 +782,12 @@
             }, 30);
         }
 
+        function formatAlertDate(isoStr) {
+            if (!isoStr) return '--';
+            const d = (isoStr.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(isoStr)) ? new Date(isoStr) : new Date(isoStr + 'Z');
+            return isNaN(d.getTime()) ? isoStr : d.toLocaleString();
+        }
+
         async function fetchAlerts() {
             try {
                 const res = await fetch('/api/alerts');
@@ -793,7 +799,7 @@
                 }
                 tbody.innerHTML = data.map(a => `
                     <tr class="border-b border-white/15 last:border-0 hover:bg-white/10 transition-colors">
-                        <td class="py-2.5 px-3 text-xs font-mono text-emerald-300 font-bold">${new Date(a.received_at + "Z").toLocaleString()}</td>
+                        <td class="py-2.5 px-3 text-xs font-mono text-emerald-300 font-bold">${formatAlertDate(a.received_at)}</td>
                         <td class="py-2.5 px-3">
                             <span class="px-2 py-0.5 rounded bg-rose-500/30 border border-rose-400/50 text-rose-300 font-bold text-xs uppercase tracking-wider">
                                 ${a.alert_type.replace('_', ' ').toUpperCase()}
