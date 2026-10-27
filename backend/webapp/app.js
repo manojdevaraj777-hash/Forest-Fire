@@ -1,4 +1,4 @@
-const POLL_MS = 3000;
+const POLL_MS = 1000;
 const $ = (s) => document.querySelector(s);
 
 if (window.lucide) {
@@ -40,7 +40,7 @@ let smokeData = Array(MAX_DATA_POINTS).fill(null);
 
 let activeTrendsFilter = 'all';
 
-// Setup Unified Multi-Sensor Bar Chart for Trends Tab
+// Setup Unified Multi-Sensor Line Chart for Trends Tab (Continuous Analog Telemetry)
 const bctx = document.getElementById('bigTempChart');
 let bigTempChart = null;
 
@@ -48,20 +48,16 @@ if (bctx) {
     const bigCtx = bctx.getContext('2d');
     
     // Glowing gradient fills
-    const tempGrad = bigCtx.createLinearGradient(0, 0, 0, 320);
-    tempGrad.addColorStop(0, 'rgba(245, 158, 11, 0.40)');
-    tempGrad.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
+    const tempGrad = bigCtx.createLinearGradient(0, 0, 0, 360);
+    tempGrad.addColorStop(0, 'rgba(245, 158, 11, 0.45)');
+    tempGrad.addColorStop(1, 'rgba(245, 158, 11, 0.01)');
 
-    const flameGrad = bigCtx.createLinearGradient(0, 0, 0, 320);
-    flameGrad.addColorStop(0, 'rgba(244, 63, 94, 0.45)');
-    flameGrad.addColorStop(1, 'rgba(244, 63, 94, 0.02)');
-
-    const smokeGrad = bigCtx.createLinearGradient(0, 0, 0, 320);
-    smokeGrad.addColorStop(0, 'rgba(192, 132, 252, 0.35)');
-    smokeGrad.addColorStop(1, 'rgba(192, 132, 252, 0.02)');
+    const smokeGrad = bigCtx.createLinearGradient(0, 0, 0, 360);
+    smokeGrad.addColorStop(0, 'rgba(192, 132, 252, 0.40)');
+    smokeGrad.addColorStop(1, 'rgba(192, 132, 252, 0.01)');
 
     bigTempChart = new Chart(bigCtx, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: tempLabels,
             datasets: [
@@ -69,30 +65,30 @@ if (bctx) {
                     label: 'Temperature (°C)',
                     data: tempData,
                     borderColor: '#f59e0b', 
-                    backgroundColor: 'rgba(245, 158, 11, 0.85)',
-                    borderWidth: 1.5,
-                    borderRadius: 4,
-                    borderSkipped: false,
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'Flame Alert State (%)',
-                    data: flameData,
-                    borderColor: '#f43f5e', 
-                    backgroundColor: 'rgba(244, 63, 94, 0.90)',
-                    borderWidth: 1.5,
-                    borderRadius: 4,
-                    borderSkipped: false,
+                    backgroundColor: tempGrad,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 2.5,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#fbbf24',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1.5,
                     yAxisID: 'y'
                 },
                 {
                     label: 'Smoke MQ-2 (ADC)',
                     data: smokeData,
                     borderColor: '#c084fc', 
-                    backgroundColor: 'rgba(192, 132, 252, 0.85)',
-                    borderWidth: 1.5,
-                    borderRadius: 4,
-                    borderSkipped: false,
+                    backgroundColor: smokeGrad,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 2.5,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#c084fc',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1.5,
                     yAxisID: 'y1'
                 }
             ]
@@ -107,7 +103,14 @@ if (bctx) {
             },
             plugins: { 
                 legend: { 
-                    display: false 
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#e2e8f0',
+                        font: { size: 11, weight: 'bold' },
+                        usePointStyle: true,
+                        boxWidth: 8
+                    }
                 },
                 tooltip: {
                     enabled: true,
@@ -132,14 +135,14 @@ if (bctx) {
                     display: true, 
                     position: 'left',
                     min: 0, 
-                    max: 100, 
+                    max: 80, 
                     grid: { color: 'rgba(255, 255, 255, 0.12)' }, 
-                    ticks: { color: '#38bdf8', font: { size: 11, weight: 'bold' } },
+                    ticks: { color: '#fbbf24', font: { size: 11, weight: 'bold' } },
                     title: {
                         display: true,
-                        text: 'Temperature (°C) / Flame Alert (%)',
-                        color: '#e2e8f0',
-                        font: { weight: 'bold', size: 10 }
+                        text: 'Temperature (°C)',
+                        color: '#fbbf24',
+                        font: { weight: 'bold', size: 11 }
                     }
                 },
                 y1: {
@@ -154,7 +157,7 @@ if (bctx) {
                         display: true,
                         text: 'Smoke Density (0-1024 ADC)',
                         color: '#c084fc',
-                        font: { weight: 'bold', size: 10 }
+                        font: { weight: 'bold', size: 11 }
                     }
                 }
             }
@@ -162,12 +165,12 @@ if (bctx) {
     });
 }
 
-// Interactive Filter function for Trends tab (Only Temperature, Smoke, and Flame)
+// Interactive Filter function for Trends tab (Temperature & Smoke Only — Flame removed)
 window.setTrendsFilter = function(filterMode) {
     if (!bigTempChart) return;
     activeTrendsFilter = filterMode;
 
-    ['all', 'temp', 'smoke', 'flame'].forEach(k => {
+    ['all', 'temp', 'smoke'].forEach(k => {
         const btn = $(`#trend-filter-${k}`);
         if (btn) {
             if (k === filterMode) {
@@ -183,11 +186,11 @@ window.setTrendsFilter = function(filterMode) {
     if (filterMode === 'all') {
         bigTempChart.data.datasets.forEach(ds => ds.hidden = false);
     } else if (filterMode === 'temp') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 0));
-    } else if (filterMode === 'flame') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 1));
+        bigTempChart.data.datasets[0].hidden = false;
+        bigTempChart.data.datasets[1].hidden = true;
     } else if (filterMode === 'smoke') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 2));
+        bigTempChart.data.datasets[0].hidden = true;
+        bigTempChart.data.datasets[1].hidden = false;
     }
     bigTempChart.update();
 };
@@ -428,11 +431,10 @@ function setOnlineState(r) {
     flameData.push(flameLevel);
     flameData.shift();
 
-    // Refresh Unified Trends Bar Chart (Temperature, Flame, Smoke) & Live Stats
+    // Refresh Unified Trends Line Chart (Temperature & Smoke — Flame removed from chart list)
     if (bigTempChart) {
         bigTempChart.data.datasets[0].data = tempData;
-        bigTempChart.data.datasets[1].data = flameData;
-        bigTempChart.data.datasets[2].data = smokeData;
+        bigTempChart.data.datasets[1].data = smokeData;
         bigTempChart.update();
         updateTrendStats();
     }
@@ -443,7 +445,7 @@ function setOnlineState(r) {
     if (trendLinkDot) trendLinkDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]";
     if (trendLinkText) {
         trendLinkText.className = "text-xs sm:text-sm font-black text-white font-mono drop-shadow";
-        trendLinkText.textContent = "ONLINE (3000ms Poll)";
+        trendLinkText.textContent = "ONLINE (1000ms Poll)";
     }
 
     // WiFi signal pill in header
@@ -508,11 +510,87 @@ function setOnlineState(r) {
     const isAlert = r.alert === 1 || r.flame_detected || (r.smoke_adc && r.smoke_adc > 400) || (r.temperature_c && r.temperature_c > 45);
     updateAlertBadge(isAlert);
 
+    // Instant AI Emergency Solution Auto-Generation
+    checkAndTriggerImmediateAISolution(r);
+
     if (isAlert) {
         addLog(`[ALERT] Critical threshold exceeded! Incident logged.`, 'alert');
     } else {
-        if (Math.random() < 0.35) {
+        if (Math.random() < 0.25) {
             addLog(`Telemetry packet synced &bull; Temp: ${r.temperature_c ?? '?'}°C | Smoke: ${r.smoke_adc ?? '?'} ADC | Flame: ${r.flame_detected ? 'ACTIVE' : 'SAFE'}`, 'data');
+        }
+    }
+}
+
+let lastActionPlanGeneratedTime = 0;
+let isEmergencyBannerVisible = false;
+
+async function checkAndTriggerImmediateAISolution(r) {
+    const isEmergency = Boolean(r.flame_detected || (r.smoke_adc && r.smoke_adc > 400) || (r.temperature_c && r.temperature_c > 45));
+
+    const banner = $("#ai-emergency-banner");
+    const threatBadge = $("#ai-threat-badge");
+    const solutionTitle = $("#ai-solution-title");
+    const actionStepsContainer = $("#ai-action-steps");
+
+    if (!isEmergency) {
+        if (banner) banner.classList.add("hidden");
+        isEmergencyBannerVisible = false;
+        return;
+    }
+
+    if (banner) banner.classList.remove("hidden");
+
+    const now = Date.now();
+    if (now - lastActionPlanGeneratedTime > 5000 || !isEmergencyBannerVisible) {
+        lastActionPlanGeneratedTime = now;
+        isEmergencyBannerVisible = true;
+
+        try {
+            const res = await fetch("/api/action/suggest");
+            const data = await res.json();
+            if (data && data.plan) {
+                const p = data.plan;
+                if (threatBadge) threatBadge.textContent = p.threat_level || "CRITICAL ALERT";
+                if (solutionTitle) solutionTitle.textContent = p.solution_title || "Immediate Emergency Protocol";
+                
+                if (actionStepsContainer && p.actions) {
+                    actionStepsContainer.innerHTML = p.actions.slice(0, 4).map(act => `
+                        <div class="p-2.5 rounded-lg bg-black/70 border border-rose-500/40 text-rose-100 flex items-start gap-2 shadow">
+                            <span class="text-rose-400 font-bold shrink-0 text-sm">&bull;</span>
+                            <span class="leading-snug">${act}</span>
+                        </div>
+                    `).join('');
+                }
+
+                // Also update the full Action Plan view
+                const actionPlanView = $("#action-plan-content");
+                if (actionPlanView) {
+                    actionPlanView.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="p-4 rounded-xl bg-rose-950/70 border border-rose-400/50 shadow-lg">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white">${p.threat_level}</span>
+                                    <span class="text-xs text-rose-300 font-mono font-bold">${p.status}</span>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-black text-white mt-1.5">${p.solution_title}</h3>
+                                <p class="text-xs text-rose-200/90 mt-1.5 leading-relaxed">${p.explanation}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <h4 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Automated Action Steps:</h4>
+                                ${p.actions.map(a => `
+                                    <div class="p-2.5 rounded-lg bg-black/60 border border-white/15 text-xs text-slate-100 font-mono shadow">
+                                        ${a}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+        } catch(e) {
+            console.error("AI Action Plan Error:", e);
         }
     }
 }

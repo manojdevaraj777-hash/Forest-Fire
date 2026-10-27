@@ -30,9 +30,9 @@
 // SENSOR QUALITY SETTINGS
 // ==========================================
 #define MQ2_WARMUP_MS           60000   // MQ-2 heater warmup: 60 seconds
-#define MQ2_AVG_SAMPLES         10      // Averaging samples for MQ-2 noise reduction
+#define MQ2_AVG_SAMPLES         4       // Averaging samples for MQ-2 (quick non-blocking read)
 #define DHT_WARMUP_MS           2000    // DHT11 stabilization delay after begin()
-#define FLAME_DEBOUNCE_COUNT    3       // Consecutive LOW reads to confirm flame
+#define FLAME_DEBOUNCE_COUNT    1       // Instant flame trigger (0-delay confirmation)
 #define HEAT_INDEX_ALERT_C      52.0f   // Alert if Heat Index (feels-like) > 52°C
 
 // ==========================================
@@ -52,11 +52,11 @@
 // ==========================================
 // TIMING & RATE LIMITS (milliseconds)
 // ==========================================
-#define SENSOR_READ_INTERVAL_MS     2000    // Read sensors every 2 seconds
-#define ALERT_POST_COOLDOWN_MS      5000    // Min gap between alert HTTP POSTs
-#define HEARTBEAT_INTERVAL_MS       30000   // Send heartbeat every 30 seconds
-#define HTTP_RETRY_COUNT            3       // Retry failed HTTP POST up to 3 times
-#define HTTP_RETRY_DELAY_MS         2000    // Base delay between retries (doubles each time)
+#define SENSOR_READ_INTERVAL_MS     1000    // Read sensors every 1 second (Ultra-Fast Live Detection)
+#define ALERT_POST_COOLDOWN_MS      3000    // Gap between repeated alert HTTP POSTs
+#define HEARTBEAT_INTERVAL_MS       5000    // Continuous live telemetry sync every 5 seconds
+#define HTTP_RETRY_COUNT            2       // Fast retry (up to 2 times)
+#define HTTP_RETRY_DELAY_MS         500     // 500ms delay between retries
 
 // ==========================================
 // LED BLINK RATES (blinks per second)

@@ -220,7 +220,7 @@ int readSmokeAverage() {
     long sum = 0;
     for (int i = 0; i < MQ2_AVG_SAMPLES; i++) {
         sum += analogRead(MQ2_PIN);
-        delay(5);
+        delay(2);
     }
     return (int)(sum / MQ2_AVG_SAMPLES);
 }
@@ -300,26 +300,26 @@ void readSensorsAndEvaluate() {
         if (isFlameAlert)    Serial.print(F("FLAME_DETECTED "));
         Serial.println();
 
-        // Trigger buzzer pattern based on highest-priority alert
-        triggerBuzzerPattern(tempFinalAlert, isSmokeAlert, isFlameAlert);
-
-        // Send alert to cloud (with cooldown)
+        // 1. Send alert to cloud IMMEDIATELY (no blocking delays!)
         if (currentMillis - lastAlertPostTime >= ALERT_POST_COOLDOWN_MS) {
             lastAlertPostTime = currentMillis;
             sendCloudPayload(tempC, humidity, heatIndex, smokeVal, flameDetected,
                              tempFinalAlert, isHumidityAlert, isSmokeAlert, isFlameAlert,
                              false, true, true); // isHeartbeat=false, buzzerActive=true, ledActive=true
         }
+
+        // 2. Trigger non-blocking buzzer tone
+        triggerBuzzerPattern(tempFinalAlert, isSmokeAlert, isFlameAlert);
     } else {
         // --- 7. Deactivate alarms when all clear ---
         deactivateAlarms();
         Serial.println(F("[STATUS] All Clear — Environment Normal."));
     }
 
-    // --- 8. Heartbeat POST (every 30 seconds regardless of alert state) ---
+    // --- 8. Fast Heartbeat POST (every 5 seconds for real-time live detection) ---
     if (currentMillis - lastHeartbeatTime >= HEARTBEAT_INTERVAL_MS) {
         lastHeartbeatTime = currentMillis;
-        Serial.println(F("[HEARTBEAT] Sending keep-alive to cloud..."));
+        Serial.println(F("[HEARTBEAT] Sending live telemetry to cloud..."));
         sendCloudPayload(tempC, humidity, heatIndex, smokeVal, flameDetected,
                          tempFinalAlert, isHumidityAlert, isSmokeAlert, isFlameAlert,
                          true, false, false); // isHeartbeat=true, buzzerActive=false, ledActive=false
@@ -355,43 +355,16 @@ void manageLEDBlink() {
     }
 }
 
-// ==========================================
-// BUZZER PATTERNS (distinct per alert type)
-// ==========================================
-
-// Play N short beeps at a given frequency
-void playBeepCode(int count, int toneDurationMs, int freq) {
-    for (int i = 0; i < count; i++) {
-        tone(BUZZER_PIN, freq, toneDurationMs);
-        delay(toneDurationMs + 100);
-    }
-    noTone(BUZZER_PIN);
-}
-
-// SOS Pattern: ... --- ... (Morse code)
-void playSOSBuzzer() {
-    int shortMs = 150, longMs = 450, freq = 3000;
-    // S = 3 short
-    for (int i = 0; i < 3; i++) { tone(BUZZER_PIN, freq, shortMs); delay(shortMs + 150); }
-    delay(200);
-    // O = 3 long
-    for (int i = 0; i < 3; i++) { tone(BUZZER_PIN, freq, longMs);  delay(longMs  + 150); }
-    delay(200);
-    // S = 3 short
-    for (int i = 0; i < 3; i++) { tone(BUZZER_PIN, freq, shortMs); delay(shortMs + 150); }
-    noTone(BUZZER_PIN);
-}
-
 void triggerBuzzerPattern(bool isTempAlert, bool isSmokeAlert, bool isFlameAlert) {
     if (isFlameAlert) {
-        // FLAME → SOS pattern (highest emergency)
-        playSOSBuzzer();
+        // FLAME → High priority alarm tone (3000Hz, 350ms) - Non-blocking
+        tone(BUZZER_PIN, 3000, 350);
     } else if (isSmokeAlert) {
-        // SMOKE → 3 fast beeps at 2500Hz
-        playBeepCode(3, 150, 2500);
+        // SMOKE → 2500Hz, 250ms tone - Non-blocking
+        tone(BUZZER_PIN, 2500, 250);
     } else if (isTempAlert) {
-        // TEMP  → 3 slow beeps at 2000Hz
-        playBeepCode(3, 400, 2000);
+        // TEMP  → 2000Hz, 200ms tone - Non-blocking
+        tone(BUZZER_PIN, 2000, 200);
     }
 }
 

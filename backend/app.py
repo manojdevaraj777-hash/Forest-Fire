@@ -59,51 +59,93 @@ def get_action_plan(sensor_data):
     temp = sensor_data.get("temperature_c") or 0
     hum = sensor_data.get("humidity_percent") or 100
     smoke = sensor_data.get("smoke_adc") or 0
-    flame = sensor_data.get("flame_detected") or False
+    flame = bool(sensor_data.get("flame_detected"))
     
-    status = "NORMAL: No immediate fire risk detected."
-    explanation = "Sensor readings are within normal operational limits."
-    actions = [
-        "Continue routine monitoring.",
-        "Ensure sensors are clear of debris.",
-        "Verify system power and connectivity."
-    ]
-
-    if flame:
-        status = "CRITICAL: Open flame detected!"
-        explanation = "The IR Flame sensor has detected an active fire source in the immediate vicinity."
+    if flame and smoke > 400:
+        status = "CRITICAL EMERGENCY: ACTIVE WILDFIRE WITH HEAVY SMOKE"
+        threat_level = "TIER 1 — MAXIMUM EMERGENCY"
+        solution_title = "IMMEDIATE EVACUATION & ACTIVE FIRE SUPPRESSION PROTOCOL"
+        explanation = f"Active open flame and heavy combustion gas (Smoke {smoke} ADC) detected simultaneously! Immediate flashover danger."
         actions = [
-            "IMMEDIATELY evacuate the area.",
-            "Contact local fire emergency services (e.g., 911).",
-            "Do not attempt to extinguish if the fire is large.",
-            "Activate secondary site alarms.",
-            "Review camera feeds if available."
+            "🚨 SOUND IMMEDIATE EVACUATION: Evacuate all personnel within a 500-meter perimeter upwind immediately.",
+            "🚒 CALL EMERGENCY HOTLINE: Dial 101 / 911 / Forest Dept reporting ACTIVE FLAME & DENSE SMOKE at node coordinates.",
+            "💨 MOVE UPWIND & CROSSWIND: Never escape downhill into gullies or downwind of advancing fire line.",
+            "🧯 SUPPRESSION PROTOCOL: Deploy Class A/B pressurized water or foam extinguishers only if safe and flame is under 1 meter.",
+            "🛰️ AIR & DRONE DISPATCH: Launch thermal aerial reconnaissance to map containment line.",
+            "😷 RESPIRATORY PROTECTION: Don N95/P100 respirator masks against carbon monoxide & fine particulates."
         ]
-    elif temp > 45 or smoke > 400:
-        status = "WARNING: High risk of fire or active smoldering."
-        explanation = f"Elevated levels detected. Temperature is {temp}°C, Smoke ADC is {smoke}."
+    elif flame:
+        status = "CRITICAL: ACTIVE FLAME DETECTED BY IR SENSOR"
+        threat_level = "TIER 1 — IMMEDIATE FIRE HAZARD"
+        solution_title = "FLAME LOCALIZATION & DIRECT EXTINGUISHING PROTOCOL"
+        explanation = "The IR Optical Flame sensor detected immediate infrared radiation corresponding to open flame breakout."
         actions = [
-            "Dispatch a scout or drone to inspect the location.",
-            "Prepare fire suppression equipment.",
-            "Alert local response teams of a potential hazard.",
-            "Monitor wind direction to predict spread.",
-            "Verify if these readings are caused by controlled burns."
+            "🚨 EVACUATE IMMEDIATE ZONE: Clear a 200m safety radius around sensor node.",
+            "🚒 DISPATCH RAPID RESPONSE UNIT: Alert wildfire rangers and station firefighting teams.",
+            "🧯 TARGET FLAME BASE: Discharge dry chemical ABC fire extinguisher directly at the base of fuel.",
+            "💧 CLEAR FUEL BREAK: Remove dry twigs, grass, and leaf litter in a 10m perimeter to starve fuel.",
+            "📹 MONITOR SENSORS: Continuous sampling of temperature & smoke spikes."
+        ]
+    elif smoke > 400:
+        status = "HIGH ALERT: HEAVY COMBUSTION SMOKE DETECTED (MQ-2 > 400 ADC)"
+        threat_level = "TIER 2 — SMOLDERING / GAS HAZARD"
+        solution_title = "SMOLDERING INVESTIGATION & CONTAINMENT PROTOCOL"
+        explanation = f"MQ-2 sensor detected critical combustion density ({smoke} ADC). High risk of concealed root fire or smoldering timber."
+        actions = [
+            "🔍 DISPATCH SCOUT TEAM: Inspect sector for smoldering tree roots, agricultural burn, or campfire embers.",
+            "💧 WET LINE DEPLOYMENT: Spray pressurized water along perimeter to douse subsurface embers.",
+            "😷 RESPIRATORY HAZARD: Carbon monoxide and particulate levels are hazardous — wear protective masks.",
+            "🌬️ WIND VECTOR CHECK: Measure wind speed; wind gusts can rapidly ignite smoldering embers into open crown fire.",
+            "⚡ CHARGE WATER RESERVES: Stand by mobile water tankers and high-pressure hose units."
+        ]
+    elif temp > 45:
+        status = "WARNING: EXTREME TEMPERATURE SPIKE (> 45°C)"
+        threat_level = "TIER 3 — THERMAL ANOMALY"
+        solution_title = "THERMAL PRE-IGNITION COOLING PROTOCOL"
+        explanation = f"Ambient temperature spiked to {temp}°C, surpassing the safe threshold. Vegetation moisture is rapidly evaporating."
+        actions = [
+            "🌡️ THERMAL SURVEY: Check if proximity heat source or machinery friction caused spike.",
+            "💧 PERIMETER HYDRATION: Dampen surrounding forest floor to raise fuel moisture above 30%.",
+            "🚫 RESTRICT ACCESS: Suspend motorized traffic, hot work, and ignition sources in this sector.",
+            "📡 CONTINUOUS SAMPLING: Keep telemetry link active to detect rapid thermal transitions."
         ]
     elif temp > 35 and hum < 30:
-        status = "ELEVATED RISK: Dry and hot conditions."
-        explanation = "The environment is highly susceptible to ignition."
+        status = "ELEVATED RISK: DRY & HOT FIRE WEATHER CONDITIONS"
+        threat_level = "TIER 4 — FIRE WEATHER WATCH"
+        solution_title = "PREVENTIVE WILDFIRE PATROL PROTOCOL"
+        explanation = f"High temperature ({temp}°C) and low relative humidity ({hum}%) create prime conditions for spark ignition."
         actions = [
-            "Increase monitoring frequency.",
-            "Restrict access to high-risk areas.",
-            "Check equipment for potential overheating.",
-            "Ensure emergency water reserves are full."
+            "⚠️ INCREASE WATCH FREQUENCY: Transition sensor polling to high frequency.",
+            "💧 VERIFY WATER TANKS: Confirm all emergency water reservoirs are 100% filled.",
+            "🛰️ SATELLITE / DRONE PASS: Schedule perimeter recon over dry timber zones."
+        ]
+    else:
+        status = "NORMAL: ALL SENSOR READINGS WITHIN SAFE THRESHOLDS"
+        threat_level = "TIER 5 — SECURE"
+        solution_title = "ROUTINE MONITORING PROTOCOL"
+        explanation = "Environmental parameters are stable. All sensor readings are within baseline."
+        actions = [
+            "✅ Normal Operations: Temperature, Smoke, and IR optical sensors operating within baseline.",
+            "🧹 Sensor Maintenance: Keep sensor optical lenses clean from dust and forest debris.",
+            "🔋 Power & WiFi: Maintain consistent power and stable WiFi link."
         ]
         
-    return (
-        f"1. STATUS: {status}\n"
-        f"2. EXPLANATION: {explanation}\n"
-        f"3. ACTIONS:\n" + "\n".join(f"   - {a}" for a in actions)
+    formatted = (
+        f"🚨 STATUS: {status}\n"
+        f"🛡️ THREAT LEVEL: {threat_level}\n"
+        f"📋 IMMEDIATE SOLUTION: {solution_title}\n\n"
+        f"ℹ️ ANALYSIS: {explanation}\n\n"
+        f"⚡ IMMEDIATE EMERGENCY ACTION STEPS:\n" + "\n".join(f"   {a}" for a in actions)
     )
+    return {
+        "status": status,
+        "threat_level": threat_level,
+        "solution_title": solution_title,
+        "explanation": explanation,
+        "actions": actions,
+        "formatted": formatted,
+        "is_emergency": bool(flame or smoke > 400 or temp > 45)
+    }
 
 
 def get_db():
@@ -327,10 +369,11 @@ def action_suggest():
     except Exception:
         age_sec = 999999
 
-    if age_sec > 45:
+    if age_sec > 75:
         return jsonify({
             "connected": False,
-            "analysis": f"HARDWARE OFFLINE: Last sensor reading was received {round(age_sec)} seconds ago.\n\nPlease ensure your NodeMCU is powered and connected to WiFi to stream live telemetry."
+            "analysis": f"HARDWARE OFFLINE: Last sensor reading was received {round(age_sec)} seconds ago.\n\nPlease ensure your NodeMCU is powered and connected to WiFi to stream live telemetry.",
+            "is_emergency": False
         }), 200
 
     sensor_data = {
@@ -341,8 +384,14 @@ def action_suggest():
         "flame_detected": bool(r["flame_detected"]),
         "alert": bool(r["alert"])
     }
-    analysis = get_action_plan(sensor_data)
-    return jsonify({"connected": True, "analysis": analysis, "sensor_data": sensor_data})
+    plan = get_action_plan(sensor_data)
+    return jsonify({
+        "connected": True, 
+        "analysis": plan["formatted"],
+        "plan": plan,
+        "is_emergency": plan["is_emergency"],
+        "sensor_data": sensor_data
+    })
 
 
 if __name__ == "__main__":
