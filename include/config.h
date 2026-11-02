@@ -23,7 +23,8 @@
 // ==========================================
 #define TEMP_THRESHOLD_HIGH_C       45.0f   // Alert if Temperature > 45°C
 #define HUMIDITY_THRESHOLD_LOW      20.0f   // Alert if Humidity < 20%
-#define SMOKE_THRESHOLD_ADC         400     // Alert if MQ-2 raw ADC > 400
+#define SMOKE_THRESHOLD_ADC         400     // Critical Alert if MQ-2 raw ADC > 400
+#define SMOKE_ELEVATED_ADC          300     // Advisory warning if MQ-2 raw ADC >= 300
 #define FLAME_DETECTED_STATE        LOW     // Flame sensor is Active LOW
 
 // ==========================================
@@ -54,7 +55,7 @@
 // ==========================================
 #define SENSOR_READ_INTERVAL_MS     1000    // Read sensors every 1 second (Ultra-Fast Live Detection)
 #define ALERT_POST_COOLDOWN_MS      3000    // Gap between repeated alert HTTP POSTs
-#define HEARTBEAT_INTERVAL_MS       5000    // Continuous live telemetry sync every 5 seconds
+#define HEARTBEAT_INTERVAL_MS       2500    // Continuous live telemetry sync every 2.5 seconds (Ultra-Fast)
 #define HTTP_RETRY_COUNT            2       // Fast retry (up to 2 times)
 #define HTTP_RETRY_DELAY_MS         500     // 500ms delay between retries
 

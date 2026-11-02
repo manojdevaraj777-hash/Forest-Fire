@@ -473,7 +473,7 @@ function setOnlineState(r) {
             barSmoke.style.width = Math.min(100, Math.max(0, pSmoke)) + '%';
             if (r.smoke_adc > 400) {
                 barSmoke.className = "metric-fill bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,1)]";
-            } else if (r.smoke_adc >= 350) {
+            } else if (r.smoke_adc >= 300) {
                 barSmoke.className = "metric-fill bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,1)]";
             } else {
                 barSmoke.className = "metric-fill bg-gradient-to-r from-purple-400 to-indigo-400 shadow-[0_0_10px_rgba(192,132,252,0.9)]";
@@ -519,7 +519,7 @@ function setOnlineState(r) {
         if (r.smoke_adc > 400) {
             elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500/40 border border-rose-400 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.7)] animate-pulse";
             elSmokeStatus.textContent = "HIGH SMOKE";
-        } else if (r.smoke_adc >= 350) {
+        } else if (r.smoke_adc >= 300) {
             elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/40 border border-amber-400 text-amber-300";
             elSmokeStatus.textContent = "ELEVATED";
         } else {
@@ -608,7 +608,7 @@ function updateSituationRibbon(r) {
     const hasFlame = Boolean(r.flame_detected);
     const smokeVal = r.smoke_adc ?? 0;
     const hasSmoke = smokeVal > 400;
-    const hasElevatedSmoke = smokeVal >= 350;
+    const hasElevatedSmoke = smokeVal >= 300;
     const tempVal = r.temperature_c ?? 0;
     const hasTemp = tempVal > 45;
 

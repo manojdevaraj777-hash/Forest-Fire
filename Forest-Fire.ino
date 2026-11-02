@@ -171,6 +171,31 @@ void loop() {
         }
     }
 
+    // 0b. Ultra-Fast Smoke Surge Trigger (Instant cloud update the millisecond smoke crosses 300 ADC or 400 ADC)
+    static int lastFastSmoke = 0;
+    static unsigned long lastFastSmokePost = 0;
+    int curRawSmoke = analogRead(MQ2_PIN);
+    if ((curRawSmoke >= SMOKE_ELEVATED_ADC && lastFastSmoke < SMOKE_ELEVATED_ADC) || 
+        (curRawSmoke >= SMOKE_THRESHOLD_ADC && lastFastSmoke < SMOKE_THRESHOLD_ADC)) {
+        if (currentMillis - lastFastSmokePost >= 2000) {
+            lastFastSmokePost = currentMillis;
+            Serial.printf("[FAST-TRIGGER] SMOKE SURGE (%d ADC)! Bypassing heartbeat timer to send instant update...\n", curRawSmoke);
+            bool isCrit = (curRawSmoke > SMOKE_THRESHOLD_ADC);
+            if (isCrit) {
+                currentAlertActive = true;
+                currentSmokeAlert = true;
+                tone(BUZZER_PIN, 2500, 250);
+            }
+            sendCloudPayload(isnan(lastGoodTemp) ? 32.0f : lastGoodTemp,
+                             isnan(lastGoodHumidity) ? 50.0f : lastGoodHumidity,
+                             isnan(lastGoodHeatIndex) ? 32.0f : lastGoodHeatIndex,
+                             curRawSmoke, (digitalRead(FLAME_PIN) == FLAME_DETECTED_STATE),
+                             false, false, isCrit, false,
+                             !isCrit, isCrit, isCrit);
+        }
+    }
+    lastFastSmoke = curRawSmoke;
+
     // 1. Handle OTA updates (must run every loop)
     ArduinoOTA.handle();
 
