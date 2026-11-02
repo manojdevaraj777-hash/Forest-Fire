@@ -1,4 +1,4 @@
-const POLL_MS = 400; // Ultra-Fast 400ms polling for instant live sensor detection
+const POLL_MS = 250; // Ultra-Fast 250ms polling for instant live sensor detection
 const $ = (s) => document.querySelector(s);
 
 if (window.lucide) {
@@ -482,7 +482,7 @@ function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r)
                     pin: 'Pin A0 (Analog)',
                     headline: 'DENSE SMOKE',
                     valueHtml: `<span class="px-3 py-1 rounded bg-purple-600 text-white font-black text-xs font-mono shadow animate-pulse">${r.smoke_adc ?? '--'} ADC</span>`,
-                    threshold: 'Exceeded Critical: > 400 ADC',
+                    threshold: 'Exceeded Critical: >= 300 ADC',
                     bg: 'bg-purple-900/60',
                     border: 'border-purple-400/60',
                     tagBg: 'bg-purple-500/30 text-purple-300 border border-purple-400/40'
@@ -770,9 +770,9 @@ function setOnlineState(r) {
         if (barSmoke) {
             let pSmoke = (r.smoke_adc / 1024) * 100;
             barSmoke.style.width = Math.min(100, Math.max(0, pSmoke)) + '%';
-            if (r.smoke_adc > 400) {
+            if (r.smoke_adc >= 300) {
                 barSmoke.className = "metric-fill bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,1)]";
-            } else if (r.smoke_adc >= 300) {
+            } else if (r.smoke_adc >= 220) {
                 barSmoke.className = "metric-fill bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,1)]";
             } else {
                 barSmoke.className = "metric-fill bg-gradient-to-r from-purple-400 to-indigo-400 shadow-[0_0_10px_rgba(192,132,252,0.9)]";
@@ -803,7 +803,7 @@ function setOnlineState(r) {
     if (trendLinkDot) trendLinkDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]";
     if (trendLinkText) {
         trendLinkText.className = "text-xs sm:text-sm font-black text-white font-mono drop-shadow";
-        trendLinkText.textContent = "ONLINE (400ms Ultra-Fast Poll)";
+        trendLinkText.textContent = "ONLINE (250ms Ultra-Fast Poll)";
     }
 
     // WiFi signal pill in header
@@ -815,10 +815,10 @@ function setOnlineState(r) {
     // Smoke status badge
     const elSmokeStatus = $("#val-smoke-status");
     if (elSmokeStatus && r.smoke_adc != null) {
-        if (r.smoke_adc > 400) {
+        if (r.smoke_adc >= 300) {
             elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500/40 border border-rose-400 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.7)] animate-pulse";
             elSmokeStatus.textContent = "HIGH SMOKE";
-        } else if (r.smoke_adc >= 300) {
+        } else if (r.smoke_adc >= 220) {
             elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/40 border border-amber-400 text-amber-300";
             elSmokeStatus.textContent = "ELEVATED";
         } else {
@@ -879,9 +879,9 @@ function setOnlineState(r) {
         bFlame.textContent = r.flame_detected ? "FIRE DETECTED" : "NORMAL";
     }
 
-    // Conditional Alert Evaluation (Flame, Smoke > 400, Temp > 45, or Device Buzzer active)
+    // Conditional Alert Evaluation (Flame, Smoke >= 300, Temp > 45, or Device Buzzer active)
     const hasFlameAlert = Boolean(r.flame_detected || r.flame_alert);
-    const hasSmokeAlert = Boolean(r.high_smoke || (r.smoke_adc && r.smoke_adc > 400));
+    const hasSmokeAlert = Boolean(r.high_smoke || (r.smoke_adc && r.smoke_adc >= 300));
     const hasTempAlert = Boolean(r.high_temperature || (r.temperature_c && r.temperature_c > 45));
     const isDeviceBuzzer = (r.buzzer_active === 1);
     const isAlert = hasFlameAlert || hasSmokeAlert || hasTempAlert || (r.alert === 1 && isDeviceBuzzer);
@@ -912,12 +912,12 @@ function updateSituationRibbon(r) {
 
     if (!banner || !badge || !title || !comment) return;
 
-    const hasFlame = Boolean(r.flame_detected);
+    const hasFlame = Boolean(r.flame_detected || r.flame_alert);
     const smokeVal = r.smoke_adc ?? 0;
-    const hasSmoke = smokeVal > 400;
-    const hasElevatedSmoke = smokeVal >= 300;
+    const hasSmoke = (r.high_smoke === 1) || (smokeVal >= 300);
+    const hasElevatedSmoke = smokeVal >= 220;
     const tempVal = r.temperature_c ?? 0;
-    const hasTemp = tempVal > 45;
+    const hasTemp = (r.high_temperature === 1) || (tempVal > 45);
 
     if (hasFlame && hasSmoke) {
         banner.className = "glass-panel rounded-xl p-3 sm:p-3.5 border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.35)] bg-rose-950/70 transition-all";

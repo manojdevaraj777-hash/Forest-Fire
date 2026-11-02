@@ -171,30 +171,58 @@ void loop() {
         }
     }
 
-    // 0b. Ultra-Fast Smoke Surge Trigger (Instant cloud update the millisecond smoke crosses 300 ADC or 400 ADC)
-    static int lastFastSmoke = 0;
+    // 0b. Ultra-Fast Smoke Detection Interrupt (Sub-millisecond hardware check on EVERY loop pass)
+    static bool lastFastSmokeState = false;
     static unsigned long lastFastSmokePost = 0;
+    static int lastReportedSmoke = 0;
+
     int curRawSmoke = analogRead(MQ2_PIN);
-    if ((curRawSmoke >= SMOKE_ELEVATED_ADC && lastFastSmoke < SMOKE_ELEVATED_ADC) || 
-        (curRawSmoke >= SMOKE_THRESHOLD_ADC && lastFastSmoke < SMOKE_THRESHOLD_ADC)) {
-        if (currentMillis - lastFastSmokePost >= 2000) {
+    bool instantSmoke = (curRawSmoke >= SMOKE_THRESHOLD_ADC);
+
+    // Instant State Transition (Zero delay trigger the moment smoke hits >= 300 ADC)
+    if (instantSmoke != lastFastSmokeState) {
+        lastFastSmokeState = instantSmoke;
+        if (instantSmoke) {
+            Serial.printf("[FAST-TRIGGER] CRITICAL SMOKE DETECTED (%d ADC)! Instant Alarm Active...\n", curRawSmoke);
+            currentAlertActive = true;
+            currentSmokeAlert = true;
+            digitalWrite(LED_PIN, HIGH);
+            tone(BUZZER_PIN, 2500, 350); // Immediate acoustic buzzer on NodeMCU Pin D5
             lastFastSmokePost = currentMillis;
-            Serial.printf("[FAST-TRIGGER] SMOKE SURGE (%d ADC)! Bypassing heartbeat timer to send instant update...\n", curRawSmoke);
-            bool isCrit = (curRawSmoke > SMOKE_THRESHOLD_ADC);
-            if (isCrit) {
-                currentAlertActive = true;
-                currentSmokeAlert = true;
-                tone(BUZZER_PIN, 2500, 250);
-            }
+            lastReportedSmoke = curRawSmoke;
             sendCloudPayload(isnan(lastGoodTemp) ? 32.0f : lastGoodTemp,
                              isnan(lastGoodHumidity) ? 50.0f : lastGoodHumidity,
                              isnan(lastGoodHeatIndex) ? 32.0f : lastGoodHeatIndex,
                              curRawSmoke, (digitalRead(FLAME_PIN) == FLAME_DETECTED_STATE),
-                             false, false, isCrit, false,
-                             !isCrit, isCrit, isCrit);
+                             false, false, true, false,
+                             false, true, true);
+        } else {
+            Serial.printf("[FAST-TRIGGER] Smoke cleared (%d ADC). Sending instant recovery update...\n", curRawSmoke);
+            currentSmokeAlert = false;
+            if (!currentFlameAlert && !currentTempAlert) {
+                deactivateAlarms();
+            }
+            lastFastSmokePost = currentMillis;
+            lastReportedSmoke = curRawSmoke;
+            sendCloudPayload(isnan(lastGoodTemp) ? 32.0f : lastGoodTemp,
+                             isnan(lastGoodHumidity) ? 50.0f : lastGoodHumidity,
+                             isnan(lastGoodHeatIndex) ? 32.0f : lastGoodHeatIndex,
+                             curRawSmoke, (digitalRead(FLAME_PIN) == FLAME_DETECTED_STATE),
+                             false, false, false, false,
+                             true, false, false);
         }
+    } else if (instantSmoke && (currentMillis - lastFastSmokePost >= 1000) && (abs(curRawSmoke - lastReportedSmoke) >= 25)) {
+        // Active smoke surge: stream live climbing smoke telemetry every 1s
+        lastFastSmokePost = currentMillis;
+        lastReportedSmoke = curRawSmoke;
+        Serial.printf("[FAST-TRIGGER] Smoke surge live sync (%d ADC)...\n", curRawSmoke);
+        sendCloudPayload(isnan(lastGoodTemp) ? 32.0f : lastGoodTemp,
+                         isnan(lastGoodHumidity) ? 50.0f : lastGoodHumidity,
+                         isnan(lastGoodHeatIndex) ? 32.0f : lastGoodHeatIndex,
+                         curRawSmoke, (digitalRead(FLAME_PIN) == FLAME_DETECTED_STATE),
+                         false, false, true, false,
+                         false, true, true);
     }
-    lastFastSmoke = curRawSmoke;
 
     // 1. Handle OTA updates (must run every loop)
     ArduinoOTA.handle();
@@ -277,12 +305,7 @@ void setupOTA() {
 // READ SMOKE AVERAGE (10-sample moving avg)
 // ==========================================
 int readSmokeAverage() {
-    long sum = 0;
-    for (int i = 0; i < MQ2_AVG_SAMPLES; i++) {
-        sum += analogRead(MQ2_PIN);
-        delay(2);
-    }
-    return (int)(sum / MQ2_AVG_SAMPLES);
+    return (analogRead(MQ2_PIN) + analogRead(MQ2_PIN)) / 2;
 }
 
 // ==========================================
@@ -328,7 +351,7 @@ void readSensorsAndEvaluate() {
     bool isTempAlert     = (!isnan(tempC)     && tempC     > TEMP_THRESHOLD_HIGH_C);
     bool isHeatIdxAlert  = (!isnan(heatIndex) && heatIndex > HEAT_INDEX_ALERT_C);
     bool isHumidityAlert = (!isnan(humidity)  && humidity  < HUMIDITY_THRESHOLD_LOW);
-    bool isSmokeAlert    = (smokeVal > SMOKE_THRESHOLD_ADC);
+    bool isSmokeAlert    = (smokeVal >= SMOKE_THRESHOLD_ADC);
     bool isFlameAlert    = flameDetected;
 
     // Combine temp + heat index into one temp alert
