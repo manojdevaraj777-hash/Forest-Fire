@@ -396,18 +396,28 @@ window.silenceCurrentAlert = function() {
     if (modal) modal.classList.add("hidden");
 };
 
-window.testWebAlarmSound = function() {
+window.testWebAlarmSound = function(type = 'flame') {
     initWebAudio();
     userSilencedThisIncident = false;
-    const testReading = {
-        temperature_c: 48.5,
-        smoke_adc: 580,
-        flame_detected: true,
-        alert: 1,
-        buzzer_active: 1
-    };
-    handleEmergencyAlertPopupAndAudio(true, true, true, true, testReading);
-    addLog("[DEMO-TEST] Wildfire Alarm Triggered: Web Buzzer Siren & Alert Modal Active!", "alert");
+    let testReading;
+    if (type === 'smoke') {
+        testReading = { temperature_c: 27.2, smoke_adc: 580, flame_detected: false, high_smoke: 1, alert: 1, buzzer_active: 1 };
+        handleEmergencyAlertPopupAndAudio(true, false, true, false, testReading);
+        addLog("[DEMO-TEST] Wildfire Smoke Alarm Triggered — MQ-2 High Smoke Alert Active!", "alert");
+    } else if (type === 'temp') {
+        testReading = { temperature_c: 49.0, smoke_adc: 120, flame_detected: false, high_temperature: 1, alert: 1, buzzer_active: 1 };
+        handleEmergencyAlertPopupAndAudio(true, false, false, true, testReading);
+        addLog("[DEMO-TEST] Wildfire Thermal Alarm Triggered — DHT11 High Heat Alert Active!", "alert");
+    } else if (type === 'all') {
+        testReading = { temperature_c: 48.5, smoke_adc: 580, flame_detected: true, alert: 1, buzzer_active: 1 };
+        handleEmergencyAlertPopupAndAudio(true, true, true, true, testReading);
+        addLog("[DEMO-TEST] Multi-Sensor Wildfire Alarm Triggered: Flame, Smoke & Heat Active!", "alert");
+    } else {
+        // default flame only
+        testReading = { temperature_c: 26.8, smoke_adc: 110, flame_detected: true, flame_alert: 1, alert: 1, buzzer_active: 1 };
+        handleEmergencyAlertPopupAndAudio(true, true, false, false, testReading);
+        addLog("[DEMO-TEST] Wildfire Flame Alarm Triggered — IR Flame Sensor Alert Active!", "alert");
+    }
 
     // Automatically stop after 6 seconds if not silenced by user
     setTimeout(() => {
@@ -422,9 +432,7 @@ function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r)
     const modal = $("#emergency-alert-modal");
     const title = $("#alert-modal-title");
     const desc = $("#alert-modal-desc");
-    const statTemp = $("#alert-stat-temp");
-    const statSmoke = $("#alert-stat-smoke");
-    const statFlame = $("#alert-stat-flame");
+    const metricsContainer = $("#alert-modal-metrics-container");
 
     if (isAlert) {
         if (!isAlertCurrentlyActive) {
@@ -433,8 +441,12 @@ function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r)
             
             // Native desktop notification if supported
             if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("🚨 Forest Sentry: CRITICAL WILDFIRE ALERT!", {
-                    body: `Fire hazard detected at node! Temp: ${r.temperature_c}°C | Smoke: ${r.smoke_adc} ADC | Flame: ${r.flame_detected ? 'ACTIVE' : 'SAFE'}`
+                const triggeredNames = [];
+                if (isFlame) triggeredNames.push("FLAME");
+                if (isSmoke) triggeredNames.push(`SMOKE (${r.smoke_adc} ADC)`);
+                if (isTemp) triggeredNames.push(`HEAT (${r.temperature_c}°C)`);
+                new Notification(`🚨 Forest Sentry: ${triggeredNames.join(' & ')} DETECTED!`, {
+                    body: `Emergency Alert triggered at Node 01.`
                 });
             } else if ("Notification" in window && Notification.permission === "default") {
                 Notification.requestPermission();
@@ -444,29 +456,120 @@ function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r)
         // Start Single-Tone Alert Buzzer Sound
         startWebBuzzer();
 
-        // Display High-Visibility Popup Alert Message
+        // Display High-Visibility Popup Alert Message ONLY for the specific triggered sensors
         if (modal && !userSilencedThisIncident) {
             modal.classList.remove("hidden");
-            if (isFlame && isSmoke) {
-                if (title) title.textContent = "🚨 CRITICAL WILDFIRE: FLAME & DENSE SMOKE!";
-                if (desc) desc.textContent = "Optical IR sensor and MQ-2 smoke sensor triggered simultaneously. Evacuate 500m upwind & dial Emergency 101/112!";
-            } else if (isFlame) {
-                if (title) title.textContent = "🚨 CRITICAL FLAME DETECTED (IR SENSOR)!";
-                if (desc) desc.textContent = "Active flame radiation detected by sensor. Aim Class ABC extinguisher at flame base!";
-            } else if (isSmoke) {
-                if (title) title.textContent = `🚨 HIGH SMOKE LEVEL (${r.smoke_adc} ADC > 400)!`;
-                if (desc) desc.textContent = "Heavy combustion smoke detected. Stay low below smoke layer and inspect area!";
-            } else if (isTemp) {
-                if (title) title.textContent = `🚨 THERMAL SPIKE ALERT (${r.temperature_c}°C > 45°C)!`;
-                if (desc) desc.textContent = "Extreme heat condition detected. Monitor area for spontaneous ignition!";
-            } else {
-                if (title) title.textContent = "🚨 HARDWARE BUZZER ALARM ACTIVE!";
-                if (desc) desc.textContent = "NodeMCU device triggered local acoustic alarm.";
+
+            // Filter strictly for sensors that exceeded danger threshold
+            const activeTriggers = [];
+            if (isFlame) {
+                activeTriggers.push({
+                    type: 'flame',
+                    name: 'IR Flame Sensor',
+                    pin: 'Pin D1 / GPIO5',
+                    headline: 'FIRE DETECTED',
+                    valueHtml: '<span class="px-3 py-1 rounded bg-rose-600 text-white font-black text-xs tracking-wider shadow animate-pulse">🔥 ACTIVE FIRE</span>',
+                    threshold: 'Optical IR Active Combustion',
+                    bg: 'bg-rose-900/60',
+                    border: 'border-rose-400/60',
+                    tagBg: 'bg-rose-500/30 text-rose-300 border border-rose-400/40'
+                });
+            }
+            if (isSmoke) {
+                activeTriggers.push({
+                    type: 'smoke',
+                    name: 'MQ-2 Smoke Sensor',
+                    pin: 'Pin A0 (Analog)',
+                    headline: 'DENSE SMOKE',
+                    valueHtml: `<span class="px-3 py-1 rounded bg-purple-600 text-white font-black text-xs font-mono shadow animate-pulse">${r.smoke_adc ?? '--'} ADC</span>`,
+                    threshold: 'Exceeded Critical: > 400 ADC',
+                    bg: 'bg-purple-900/60',
+                    border: 'border-purple-400/60',
+                    tagBg: 'bg-purple-500/30 text-purple-300 border border-purple-400/40'
+                });
+            }
+            if (isTemp) {
+                activeTriggers.push({
+                    type: 'temp',
+                    name: 'DHT11 Temperature Sensor',
+                    pin: 'Pin D2 / GPIO4',
+                    headline: 'THERMAL SPIKE',
+                    valueHtml: `<span class="px-3 py-1 rounded bg-amber-600 text-white font-black text-xs font-mono shadow animate-pulse">${r.temperature_c ?? '--'}°C</span>`,
+                    threshold: 'Exceeded Critical: > 45°C',
+                    bg: 'bg-amber-900/60',
+                    border: 'border-amber-400/60',
+                    tagBg: 'bg-amber-500/30 text-amber-300 border border-amber-400/40'
+                });
             }
 
-            if (statTemp) statTemp.textContent = `${r.temperature_c ?? '--'}°C`;
-            if (statSmoke) statSmoke.textContent = `${r.smoke_adc ?? '--'} ADC`;
-            if (statFlame) statFlame.textContent = r.flame_detected ? "🔥 ACTIVE" : "SAFE";
+            // Set Title & Description strictly matching the detected sensors
+            if (activeTriggers.length === 3) {
+                if (title) title.textContent = "🚨 CRITICAL WILDFIRE: FLAME, SMOKE & HEAT DETECTED!";
+                if (desc) desc.textContent = "All physical sensors triggered emergency thresholds simultaneously. Immediate wildfire confirmed! Evacuate 500m upwind & dial 101/112.";
+            } else if (activeTriggers.length === 2) {
+                const names = activeTriggers.map(t => t.headline).join(' & ');
+                if (title) title.textContent = `🚨 CRITICAL EMERGENCY: ${names}!`;
+                if (desc) desc.textContent = "Multiple physical sensors triggered simultaneously. High danger wildfire condition confirmed! Evacuate area immediately.";
+            } else if (activeTriggers.length === 1) {
+                const s = activeTriggers[0];
+                if (s.type === 'flame') {
+                    if (title) title.textContent = "🔥 ACTIVE FLAME DETECTED (IR SENSOR TRIGGERED)!";
+                    if (desc) desc.textContent = "Optical infrared flame sensor detected active combustion radiation. Aim extinguisher directly at flame base & clear flammable materials!";
+                } else if (s.type === 'smoke') {
+                    if (title) title.textContent = `💨 HIGH SMOKE LEVEL DETECTED (${r.smoke_adc ?? '--'} ADC)!`;
+                    if (desc) desc.textContent = "MQ-2 sensor detected dense combustion smoke particles. Stay low below smoke layer and inspect area for embers!";
+                } else if (s.type === 'temp') {
+                    if (title) title.textContent = `🌡️ HIGH TEMPERATURE ALERT (${r.temperature_c ?? '--'}°C)!`;
+                    if (desc) desc.textContent = "DHT11 digital probe detected critical ambient thermal spike. Monitor area for spontaneous ignition!";
+                }
+            } else {
+                if (title) title.textContent = "🚨 HARDWARE BUZZER ALARM ACTIVE!";
+                if (desc) desc.textContent = "NodeMCU device triggered local acoustic alarm on Pin D5.";
+            }
+
+            // Render ONLY the cards for the detected sensors (No un-triggered or random sensors!)
+            if (metricsContainer) {
+                if (activeTriggers.length === 0) {
+                    metricsContainer.innerHTML = `
+                        <div class="bg-slate-900/60 p-3 rounded-xl border border-white/20 text-center font-bold text-white text-xs">
+                            Hardware Buzzer Alarm Active on NodeMCU ESP8266 (Pin D5)
+                        </div>`;
+                } else if (activeTriggers.length === 1) {
+                    const s = activeTriggers[0];
+                    metricsContainer.innerHTML = `
+                        <div class="${s.bg} p-3 rounded-xl border ${s.border} flex items-center justify-between shadow-lg">
+                            <div>
+                                <div class="flex items-center gap-2 mb-0.5">
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${s.tagBg}">TRIGGERED SENSOR</span>
+                                    <span class="text-xs font-mono text-slate-300">${s.pin}</span>
+                                </div>
+                                <span class="text-sm font-black text-white">${s.name}</span>
+                                <span class="block text-[11px] text-slate-200 font-medium mt-0.5">${s.threshold}</span>
+                            </div>
+                            <div class="text-right shrink-0 ml-3">
+                                ${s.valueHtml}
+                            </div>
+                        </div>`;
+                } else {
+                    const gridClass = activeTriggers.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3';
+                    const cardsHtml = activeTriggers.map(s => `
+                        <div class="${s.bg} p-2.5 rounded-xl border ${s.border} flex flex-col justify-between shadow">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-[9px] font-mono font-bold uppercase ${s.tagBg} px-1.5 py-0.2 rounded">${s.pin}</span>
+                                    <span class="text-[10px] text-slate-200 font-bold">${s.headline}</span>
+                                </div>
+                                <span class="text-xs font-black text-white block">${s.name}</span>
+                                <span class="text-[10px] text-slate-300 font-mono block mt-0.5">${s.threshold}</span>
+                            </div>
+                            <div class="mt-2 pt-1.5 border-t border-white/10 text-right">
+                                ${s.valueHtml}
+                            </div>
+                        </div>
+                    `).join('');
+                    metricsContainer.innerHTML = `<div class="grid grid-cols-1 ${gridClass} gap-2">${cardsHtml}</div>`;
+                }
+            }
         }
     } else {
         // All systems clear
@@ -777,11 +880,11 @@ function setOnlineState(r) {
     }
 
     // Conditional Alert Evaluation (Flame, Smoke > 400, Temp > 45, or Device Buzzer active)
-    const hasFlameAlert = Boolean(r.flame_detected);
-    const hasSmokeAlert = Boolean(r.smoke_adc && r.smoke_adc > 400);
-    const hasTempAlert = Boolean(r.temperature_c && r.temperature_c > 45);
+    const hasFlameAlert = Boolean(r.flame_detected || r.flame_alert);
+    const hasSmokeAlert = Boolean(r.high_smoke || (r.smoke_adc && r.smoke_adc > 400));
+    const hasTempAlert = Boolean(r.high_temperature || (r.temperature_c && r.temperature_c > 45));
     const isDeviceBuzzer = (r.buzzer_active === 1);
-    const isAlert = (r.alert === 1) || hasFlameAlert || hasSmokeAlert || hasTempAlert || isDeviceBuzzer;
+    const isAlert = hasFlameAlert || hasSmokeAlert || hasTempAlert || (r.alert === 1 && isDeviceBuzzer);
 
     updateAlertBadge(isAlert);
 
