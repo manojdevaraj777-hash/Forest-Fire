@@ -313,7 +313,12 @@ document.addEventListener('click', () => {
     initWebAudio();
 }, { once: false });
 
-function playBuzzerPulse(freq = 2800, durationMs = 170) {
+// Constant Alert Buzzer Specification (Single consistent tone, authentic piezo buzzer buzz)
+const ALERT_BUZZER_FREQ = 2400; // 2400 Hz industry standard buzzer tone
+const ALERT_BUZZER_PULSE_MS = 180; // 180ms beep duration
+const ALERT_BUZZER_INTERVAL_MS = 360; // 180ms on, 180ms off repeating steadily
+
+function playAlertBuzzerBeep() {
     if (!isWebBuzzerEnabled || userSilencedThisIncident) return;
     initWebAudio();
     if (!audioCtx) return;
@@ -322,36 +327,37 @@ function playBuzzerPulse(freq = 2800, durationMs = 170) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
-        osc.type = 'sawtooth'; // Piercing piezoelectric buzzer timbre
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        // Authentic electronic alert buzzer timbre (square wave with harmonic buzz)
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(ALERT_BUZZER_FREQ, audioCtx.currentTime);
 
         const now = audioCtx.currentTime;
+        const durSec = ALERT_BUZZER_PULSE_MS / 1000;
+
+        // Sharp buzzer on/off envelope
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.35, now + 0.015);
-        gain.gain.setValueAtTime(0.35, now + (durationMs / 1000) - 0.02);
-        gain.gain.linearRampToValueAtTime(0.001, now + (durationMs / 1000));
+        gain.gain.linearRampToValueAtTime(0.3, now + 0.008);
+        gain.gain.setValueAtTime(0.3, now + durSec - 0.015);
+        gain.gain.linearRampToValueAtTime(0.001, now + durSec);
 
         osc.connect(gain);
         gain.connect(audioCtx.destination);
 
-        osc.start();
-        osc.stop(now + (durationMs / 1000));
+        osc.start(now);
+        osc.stop(now + durSec);
     } catch (e) {
         console.warn("Buzzer audio error:", e);
     }
 }
 
-function startWebBuzzer(isFlame, isSmoke, isTemp) {
-    if (buzzerInterval) return; // Already pulsing
+function startWebBuzzer() {
+    if (buzzerInterval) return; // Already buzzing
     
-    // Flame: 3000Hz rapid beeps (matching Arduino tone(BUZZER_PIN, 3000, 400)); Smoke: 2500Hz beeps
-    const freq = isFlame ? 3000 : (isSmoke ? 2500 : 2200);
-    const intervalMs = isFlame ? 280 : 380;
-
-    playBuzzerPulse(freq, 160);
+    // Play immediately, then repeat steadily (single identical sound repeated)
+    playAlertBuzzerBeep();
     buzzerInterval = setInterval(() => {
-        playBuzzerPulse(freq, 160);
-    }, intervalMs);
+        playAlertBuzzerBeep();
+    }, ALERT_BUZZER_INTERVAL_MS);
 }
 
 function stopWebBuzzer() {
@@ -372,8 +378,8 @@ window.toggleWebBuzzer = function() {
         if (btn) btn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all shadow cursor-pointer";
         if (text) text.textContent = "Buzzer: ON";
         if (icon) icon.setAttribute("data-lucide", "volume-2");
-        // Test chirp
-        playBuzzerPulse(2600, 100);
+        // Test single beep
+        playAlertBuzzerBeep();
     } else {
         stopWebBuzzer();
         if (btn) btn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/20 hover:bg-slate-500/30 border border-slate-400/40 text-slate-300 text-xs font-bold transition-all shadow cursor-pointer";
@@ -435,8 +441,8 @@ function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r)
             }
         }
 
-        // Start Web Audio Buzzer Siren
-        startWebBuzzer(isFlame, isSmoke, isTemp);
+        // Start Single-Tone Alert Buzzer Sound
+        startWebBuzzer();
 
         // Display High-Visibility Popup Alert Message
         if (modal && !userSilencedThisIncident) {
