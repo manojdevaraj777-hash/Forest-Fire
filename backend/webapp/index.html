@@ -138,6 +138,30 @@
             border-radius: 4px;
         }
 
+        /* Fire Alerts Table Scrollbar (Auto scroll after 8 items reached) */
+        .alerts-table-scroll {
+            max-height: 388px;
+            overflow-y: auto;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(244, 63, 94, 0.5) rgba(0, 0, 0, 0.3);
+        }
+        .alerts-table-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .alerts-table-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.35); 
+            border-radius: 4px;
+        }
+        .alerts-table-scroll::-webkit-scrollbar-thumb {
+            background: rgba(244, 63, 94, 0.5); 
+            border-radius: 4px;
+        }
+        .alerts-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(244, 63, 94, 0.85); 
+        }
+
         .metric-bar {
             height: 5px;
             background: rgba(255, 255, 255, 0.2);
@@ -523,26 +547,29 @@
                             <i data-lucide="bell" class="w-4 h-4 text-rose-300"></i>
                         </div>
                         <div>
-                            <h2 class="text-base font-bold text-white drop-shadow">Fire Alerts</h2>
-                            <p class="text-xs text-slate-200">Recent fire warnings and sensor threshold alerts</p>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-base font-bold text-white drop-shadow">Fire Alerts</h2>
+                                <span id="alerts-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/30 text-rose-300 border border-rose-400/40">--</span>
+                            </div>
+                            <p class="text-xs text-slate-200">Recent fire warnings and sensor threshold alerts (Scroll enabled after 8 items)</p>
                         </div>
                     </div>
                     <button onclick="fetchAlerts()" class="px-3.5 py-1.5 bg-rose-600/40 hover:bg-rose-500/50 border border-rose-400/50 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-2 shadow">
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Alerts
                     </button>
                 </div>
-                <div class="p-4 overflow-x-auto bg-black/40">
-                    <table class="w-full text-left text-xs sm:text-sm text-slate-100">
-                        <thead>
-                            <tr class="text-emerald-300 border-b border-white/20 uppercase tracking-wider font-bold">
-                                <th class="pb-2.5 px-3">Date & Time</th>
-                                <th class="pb-2.5 px-3">Alert Type</th>
-                                <th class="pb-2.5 px-3">Temperature (°C)</th>
-                                <th class="pb-2.5 px-3">Smoke Level</th>
+                <div class="alerts-table-scroll bg-black/40">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-100 border-collapse">
+                        <thead class="sticky top-0 bg-[#0b1422]/95 backdrop-blur-md z-10 border-b border-white/20 shadow-sm">
+                            <tr class="text-emerald-300 uppercase tracking-wider font-bold">
+                                <th class="py-3 px-4">Date & Time</th>
+                                <th class="py-3 px-4">Alert Type</th>
+                                <th class="py-3 px-4">Temperature (°C)</th>
+                                <th class="py-3 px-4">Smoke Level</th>
                             </tr>
                         </thead>
-                        <tbody id="alerts-tbody">
-                            <tr><td colspan="4" class="py-6 text-center text-slate-300 font-medium">Fetching recent alerts...</td></tr>
+                        <tbody id="alerts-tbody" class="divide-y divide-white/10">
+                            <tr><td colspan="4" class="py-8 text-center text-slate-300 font-medium">Fetching recent alerts...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -794,20 +821,24 @@
                 const res = await fetch('/api/alerts');
                 const data = await res.json();
                 const tbody = document.getElementById('alerts-tbody');
+                const countBadge = document.getElementById('alerts-count-badge');
+                if (countBadge) {
+                    countBadge.textContent = `${data.length} ${data.length === 1 ? 'Alert' : 'Alerts'}`;
+                }
                 if(!data.length) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-300 font-medium">No alerts recorded. All systems within safe thresholds.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-slate-300 font-medium">No alerts recorded. All systems within safe thresholds.</td></tr>';
                     return;
                 }
                 tbody.innerHTML = data.map(a => `
-                    <tr class="border-b border-white/15 last:border-0 hover:bg-white/10 transition-colors">
-                        <td class="py-2.5 px-3 text-xs font-mono text-emerald-300 font-bold">${formatAlertDate(a.received_at)}</td>
-                        <td class="py-2.5 px-3">
+                    <tr class="hover:bg-white/10 transition-colors">
+                        <td class="py-2.5 px-4 text-xs font-mono text-emerald-300 font-bold">${formatAlertDate(a.received_at)}</td>
+                        <td class="py-2.5 px-4">
                             <span class="px-2 py-0.5 rounded bg-rose-500/30 border border-rose-400/50 text-rose-300 font-bold text-xs uppercase tracking-wider">
                                 ${a.alert_type.replace('_', ' ').toUpperCase()}
                             </span>
                         </td>
-                        <td class="py-2.5 px-3 font-bold text-white">${a.temperature_c ?? '--'} °C</td>
-                        <td class="py-2.5 px-3 font-bold text-amber-300">${a.smoke_adc ?? '--'}</td>
+                        <td class="py-2.5 px-4 font-bold text-white">${a.temperature_c ?? '--'} °C</td>
+                        <td class="py-2.5 px-4 font-bold text-amber-300">${a.smoke_adc ?? '--'}</td>
                     </tr>
                 `).join('');
             } catch(e) {
