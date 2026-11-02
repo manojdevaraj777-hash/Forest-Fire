@@ -282,28 +282,13 @@
                 </button>
             </div>
 
-            <!-- Controls & Live Status Pill -->
-            <div class="flex items-center gap-2">
-                <!-- Web Audio Buzzer Sound Toggle -->
-                <button id="btn-buzzer-toggle" onclick="toggleWebBuzzer()" title="Toggle Web Alarm Buzzer" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all shadow cursor-pointer">
-                    <i id="icon-buzzer" data-lucide="volume-2" class="w-3.5 h-3.5"></i>
-                    <span id="text-buzzer">Buzzer: ON</span>
-                </button>
-
-                <!-- Test Alarm Button -->
-                <button id="btn-buzzer-test" onclick="testWebAlarmSound()" title="Test Web Buzzer Alarm & Emergency Alert Message" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/50 text-rose-300 text-xs font-bold transition-all shadow cursor-pointer">
-                    <i data-lucide="play" class="w-3.5 h-3.5 fill-rose-300"></i>
-                    <span>Test Alarm</span>
-                </button>
-
-                <!-- Desktop Live Status Pill (Dynamic Standby / Active Monitoring) -->
-                <div id="sys-status-container" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-400/50 shadow transition-all">
-                    <span class="relative flex h-2 w-2">
-                        <span id="sys-status-dot-ping" class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
-                        <span id="sys-status-dot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"></span>
-                    </span>
-                    <span id="sys-status-text" class="text-[11px] font-bold text-amber-200 uppercase tracking-wider">Awaiting Sensors</span>
-                </div>
+            <!-- Desktop Live Status Pill (Dynamic Standby / Active Monitoring) -->
+            <div id="sys-status-container" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-400/50 shadow transition-all">
+                <span class="relative flex h-2 w-2">
+                    <span id="sys-status-dot-ping" class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+                    <span id="sys-status-dot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"></span>
+                </span>
+                <span id="sys-status-text" class="text-[11px] font-bold text-amber-200 uppercase tracking-wider">Awaiting Sensors</span>
             </div>
         </nav>
     </header>
@@ -833,7 +818,7 @@
 
     </main>
 
-    <script src="app.js?v=41"></script>
+    <script src="app.js?v=42"></script>
     <script>
         function switchTab(tabId) {
             ['home', 'trends', 'alerts', 'hardware'].forEach(t => {
