@@ -128,7 +128,10 @@ if (bctx) {
                         color: '#e2e8f0',
                         font: { size: 11, weight: 'bold' },
                         usePointStyle: true,
-                        boxWidth: 8
+                        boxWidth: 8,
+                        filter: function(legendItem, chartData) {
+                            return !chartData.datasets[legendItem.datasetIndex].hidden;
+                        }
                     }
                 },
                 tooltip: {
@@ -208,14 +211,39 @@ window.setTrendsFilter = function(filterMode) {
         }
     });
 
+    const sub = $("#trend-subtitle");
+
     if (filterMode === 'all') {
         bigTempChart.data.datasets.forEach(ds => ds.hidden = false);
+        bigTempChart.options.scales.y.display = true;
+        bigTempChart.options.scales.y.title.text = 'Temperature (°C) / Flame Degree (0°-100°)';
+        bigTempChart.options.scales.y1.display = true;
+        bigTempChart.options.scales.y1.grid.drawOnChartArea = false;
+        if (sub) sub.textContent = "Live Continuous Telemetry Stream (Temperature, Smoke & Flame Degree)";
     } else if (filterMode === 'temp') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 0));
+        bigTempChart.data.datasets[0].hidden = false;
+        bigTempChart.data.datasets[1].hidden = true;
+        bigTempChart.data.datasets[2].hidden = true;
+        bigTempChart.options.scales.y.display = true;
+        bigTempChart.options.scales.y.title.text = 'Temperature (°C)';
+        bigTempChart.options.scales.y1.display = false;
+        if (sub) sub.textContent = "Live Telemetry Stream — Temperature Only (°C)";
     } else if (filterMode === 'smoke') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 1));
+        bigTempChart.data.datasets[0].hidden = true;
+        bigTempChart.data.datasets[1].hidden = false;
+        bigTempChart.data.datasets[2].hidden = true;
+        bigTempChart.options.scales.y.display = false;
+        bigTempChart.options.scales.y1.display = true;
+        bigTempChart.options.scales.y1.grid.drawOnChartArea = true;
+        if (sub) sub.textContent = "Live Telemetry Stream — Smoke & Gas Density Only (MQ-2 ADC)";
     } else if (filterMode === 'flame') {
-        bigTempChart.data.datasets.forEach((ds, i) => ds.hidden = (i !== 2));
+        bigTempChart.data.datasets[0].hidden = true;
+        bigTempChart.data.datasets[1].hidden = true;
+        bigTempChart.data.datasets[2].hidden = false;
+        bigTempChart.options.scales.y.display = true;
+        bigTempChart.options.scales.y.title.text = 'Flame Degree (0° - 100°)';
+        bigTempChart.options.scales.y1.display = false;
+        if (sub) sub.textContent = "Live Telemetry Stream — Optical Flame Degree Only (Active Flame)";
     }
     bigTempChart.update();
 };
