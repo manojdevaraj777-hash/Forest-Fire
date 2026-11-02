@@ -287,10 +287,178 @@ function updateAlertBadge(isAlertActive) {
     }
 }
 
+// ==========================================
+// WEB AUDIO BUZZER SOUND ENGINE (Device-Triggered)
+// ==========================================
+let audioCtx = null;
+let buzzerInterval = null;
+let isWebBuzzerEnabled = true;
+let isAlertCurrentlyActive = false;
+let userSilencedThisIncident = false;
+
+function initWebAudio() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            audioCtx = new AudioContext();
+        }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+// Auto-unlock audio context on any user click
+document.addEventListener('click', () => {
+    initWebAudio();
+}, { once: false });
+
+function playBuzzerPulse(freq = 2800, durationMs = 170) {
+    if (!isWebBuzzerEnabled || userSilencedThisIncident) return;
+    initWebAudio();
+    if (!audioCtx) return;
+
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth'; // Piercing piezoelectric buzzer timbre
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+        const now = audioCtx.currentTime;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.35, now + 0.015);
+        gain.gain.setValueAtTime(0.35, now + (durationMs / 1000) - 0.02);
+        gain.gain.linearRampToValueAtTime(0.001, now + (durationMs / 1000));
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(now + (durationMs / 1000));
+    } catch (e) {
+        console.warn("Buzzer audio error:", e);
+    }
+}
+
+function startWebBuzzer(isFlame, isSmoke, isTemp) {
+    if (buzzerInterval) return; // Already pulsing
+    
+    // Flame: 3000Hz rapid beeps (matching Arduino tone(BUZZER_PIN, 3000, 400)); Smoke: 2500Hz beeps
+    const freq = isFlame ? 3000 : (isSmoke ? 2500 : 2200);
+    const intervalMs = isFlame ? 280 : 380;
+
+    playBuzzerPulse(freq, 160);
+    buzzerInterval = setInterval(() => {
+        playBuzzerPulse(freq, 160);
+    }, intervalMs);
+}
+
+function stopWebBuzzer() {
+    if (buzzerInterval) {
+        clearInterval(buzzerInterval);
+        buzzerInterval = null;
+    }
+}
+
+window.toggleWebBuzzer = function() {
+    initWebAudio();
+    isWebBuzzerEnabled = !isWebBuzzerEnabled;
+    const btn = $("#btn-buzzer-toggle");
+    const icon = $("#icon-buzzer");
+    const text = $("#text-buzzer");
+
+    if (isWebBuzzerEnabled) {
+        if (btn) btn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all shadow cursor-pointer";
+        if (text) text.textContent = "Buzzer: ON";
+        if (icon) icon.setAttribute("data-lucide", "volume-2");
+        // Test chirp
+        playBuzzerPulse(2600, 100);
+    } else {
+        stopWebBuzzer();
+        if (btn) btn.className = "flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/20 hover:bg-slate-500/30 border border-slate-400/40 text-slate-300 text-xs font-bold transition-all shadow cursor-pointer";
+        if (text) text.textContent = "Buzzer: OFF";
+        if (icon) icon.setAttribute("data-lucide", "volume-x");
+    }
+    if (window.lucide) lucide.createIcons();
+};
+
+window.silenceCurrentAlert = function() {
+    userSilencedThisIncident = true;
+    stopWebBuzzer();
+    const modal = $("#emergency-alert-modal");
+    if (modal) modal.classList.add("hidden");
+};
+
+function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r) {
+    const modal = $("#emergency-alert-modal");
+    const title = $("#alert-modal-title");
+    const desc = $("#alert-modal-desc");
+    const statTemp = $("#alert-stat-temp");
+    const statSmoke = $("#alert-stat-smoke");
+    const statFlame = $("#alert-stat-flame");
+
+    if (isAlert) {
+        if (!isAlertCurrentlyActive) {
+            isAlertCurrentlyActive = true;
+            userSilencedThisIncident = false;
+            
+            // Native desktop notification if supported
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("🚨 Forest Sentry: CRITICAL WILDFIRE ALERT!", {
+                    body: `Fire hazard detected at node! Temp: ${r.temperature_c}°C | Smoke: ${r.smoke_adc} ADC | Flame: ${r.flame_detected ? 'ACTIVE' : 'SAFE'}`
+                });
+            } else if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        }
+
+        // Start Web Audio Buzzer Siren
+        startWebBuzzer(isFlame, isSmoke, isTemp);
+
+        // Display High-Visibility Popup Alert Message
+        if (modal && !userSilencedThisIncident) {
+            modal.classList.remove("hidden");
+            if (isFlame && isSmoke) {
+                if (title) title.textContent = "🚨 CRITICAL WILDFIRE: FLAME & DENSE SMOKE!";
+                if (desc) desc.textContent = "Optical IR sensor and MQ-2 smoke sensor triggered simultaneously. Evacuate 500m upwind & dial Emergency 101/112!";
+            } else if (isFlame) {
+                if (title) title.textContent = "🚨 CRITICAL FLAME DETECTED (IR SENSOR)!";
+                if (desc) desc.textContent = "Active flame radiation detected by sensor. Aim Class ABC extinguisher at flame base!";
+            } else if (isSmoke) {
+                if (title) title.textContent = `🚨 HIGH SMOKE LEVEL (${r.smoke_adc} ADC > 400)!`;
+                if (desc) desc.textContent = "Heavy combustion smoke detected. Stay low below smoke layer and inspect area!";
+            } else if (isTemp) {
+                if (title) title.textContent = `🚨 THERMAL SPIKE ALERT (${r.temperature_c}°C > 45°C)!`;
+                if (desc) desc.textContent = "Extreme heat condition detected. Monitor area for spontaneous ignition!";
+            } else {
+                if (title) title.textContent = "🚨 HARDWARE BUZZER ALARM ACTIVE!";
+                if (desc) desc.textContent = "NodeMCU device triggered local acoustic alarm.";
+            }
+
+            if (statTemp) statTemp.textContent = `${r.temperature_c ?? '--'}°C`;
+            if (statSmoke) statSmoke.textContent = `${r.smoke_adc ?? '--'} ADC`;
+            if (statFlame) statFlame.textContent = r.flame_detected ? "🔥 ACTIVE" : "SAFE";
+        }
+    } else {
+        // All systems clear
+        if (isAlertCurrentlyActive) {
+            isAlertCurrentlyActive = false;
+            userSilencedThisIncident = false;
+        }
+        stopWebBuzzer();
+        if (modal) modal.classList.add("hidden");
+    }
+}
+
 let isHardwareOnline = false;
 let lastLogState = null;
 
 function setOfflineState(reason = "Awaiting NodeMCU connection") {
+    stopWebBuzzer();
+    const modal = $("#emergency-alert-modal");
+    if (modal) modal.classList.add("hidden");
+
     if (isHardwareOnline || lastLogState !== "offline") {
         isHardwareOnline = false;
         lastLogState = "offline";
@@ -580,12 +748,20 @@ function setOnlineState(r) {
         bFlame.textContent = r.flame_detected ? "FIRE DETECTED" : "NORMAL";
     }
 
-    // Conditional Alert Badge: Only activates on danger
-    const isAlert = r.alert === 1 || r.flame_detected || (r.smoke_adc && r.smoke_adc > 400) || (r.temperature_c && r.temperature_c > 45);
+    // Conditional Alert Evaluation (Flame, Smoke > 400, Temp > 45, or Device Buzzer active)
+    const hasFlameAlert = Boolean(r.flame_detected);
+    const hasSmokeAlert = Boolean(r.smoke_adc && r.smoke_adc > 400);
+    const hasTempAlert = Boolean(r.temperature_c && r.temperature_c > 45);
+    const isDeviceBuzzer = (r.buzzer_active === 1);
+    const isAlert = (r.alert === 1) || hasFlameAlert || hasSmokeAlert || hasTempAlert || isDeviceBuzzer;
+
     updateAlertBadge(isAlert);
 
     // Instant Fixed-Size Situation Action Plan Update
     updateSituationRibbon(r);
+
+    // Trigger Web Buzzer Sound & Emergency Alert Message Modal
+    handleEmergencyAlertPopupAndAudio(isAlert, hasFlameAlert, hasSmokeAlert, hasTempAlert, r);
 
     if (isAlert) {
         addLog(`[ALERT] Critical threshold exceeded! Incident logged.`, 'alert');

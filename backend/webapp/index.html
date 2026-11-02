@@ -282,16 +282,61 @@
                 </button>
             </div>
 
-            <!-- Desktop Live Status Pill (Dynamic Standby / Active Monitoring) -->
-            <div id="sys-status-container" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-400/50 shadow transition-all">
-                <span class="relative flex h-2 w-2">
-                    <span id="sys-status-dot-ping" class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
-                    <span id="sys-status-dot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"></span>
-                </span>
-                <span id="sys-status-text" class="text-[11px] font-bold text-amber-200 uppercase tracking-wider">Awaiting Sensors</span>
+            <!-- Controls & Live Status Pill -->
+            <div class="flex items-center gap-2">
+                <!-- Web Audio Buzzer Sound Toggle -->
+                <button id="btn-buzzer-toggle" onclick="toggleWebBuzzer()" title="Toggle Web Alarm Buzzer" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all shadow cursor-pointer">
+                    <i id="icon-buzzer" data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+                    <span id="text-buzzer">Buzzer: ON</span>
+                </button>
+
+                <!-- Desktop Live Status Pill (Dynamic Standby / Active Monitoring) -->
+                <div id="sys-status-container" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-400/50 shadow transition-all">
+                    <span class="relative flex h-2 w-2">
+                        <span id="sys-status-dot-ping" class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+                        <span id="sys-status-dot" class="relative inline-flex rounded-full h-2 w-2 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]"></span>
+                    </span>
+                    <span id="sys-status-text" class="text-[11px] font-bold text-amber-200 uppercase tracking-wider">Awaiting Sensors</span>
+                </div>
             </div>
         </nav>
     </header>
+
+    <!-- Global Emergency Alert Message Modal (Active with Audible Web Buzzer) -->
+    <div id="emergency-alert-modal" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-lg p-4 sm:p-5 rounded-2xl bg-rose-950/95 border-2 border-rose-500 shadow-[0_0_40px_rgba(244,63,94,0.7)] backdrop-blur-2xl transition-all">
+        <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-xl bg-rose-600 text-white shadow-[0_0_15px_rgba(244,63,94,1)] animate-bounce shrink-0">
+                    <i data-lucide="bell-ring" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white animate-pulse">EMERGENCY ALARM</span>
+                        <span id="alert-modal-time" class="text-xs font-mono text-rose-200">ACTIVE NOW</span>
+                    </div>
+                    <h3 id="alert-modal-title" class="text-base sm:text-lg font-black text-white mt-1 leading-tight">FIRE DETECTED</h3>
+                    <p id="alert-modal-desc" class="text-xs text-rose-100 font-semibold mt-1"></p>
+                </div>
+            </div>
+            <button onclick="silenceCurrentAlert()" class="px-2.5 py-1.5 rounded-lg bg-black/40 hover:bg-black/60 border border-white/20 text-white text-xs font-bold flex items-center gap-1 shrink-0 transition-all cursor-pointer shadow">
+                <i data-lucide="volume-x" class="w-3.5 h-3.5 text-rose-400"></i> Silence
+            </button>
+        </div>
+        <div class="mt-3.5 pt-3 border-t border-rose-500/40 grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="bg-black/40 p-2 rounded-lg border border-white/10">
+                <span class="text-[10px] text-slate-300 uppercase font-bold block">Temp</span>
+                <span id="alert-stat-temp" class="text-sm font-black text-amber-300">--°C</span>
+            </div>
+            <div class="bg-black/40 p-2 rounded-lg border border-white/10">
+                <span class="text-[10px] text-slate-300 uppercase font-bold block">Smoke MQ-2</span>
+                <span id="alert-stat-smoke" class="text-sm font-black text-purple-300">-- ADC</span>
+            </div>
+            <div class="bg-black/40 p-2 rounded-lg border border-white/10">
+                <span class="text-[10px] text-slate-300 uppercase font-bold block">IR Flame</span>
+                <span id="alert-stat-flame" class="text-sm font-black text-rose-400">--</span>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content Container (Properly Sized Dashboard, Crystal Clear Backdrop) -->
     <main class="layout-container px-3 sm:px-4 pt-2 flex flex-col gap-3.5">
@@ -782,7 +827,7 @@
 
     </main>
 
-    <script src="app.js?v=38"></script>
+    <script src="app.js?v=39"></script>
     <script>
         function switchTab(tabId) {
             ['home', 'trends', 'alerts', 'hardware'].forEach(t => {
