@@ -390,6 +390,28 @@ window.silenceCurrentAlert = function() {
     if (modal) modal.classList.add("hidden");
 };
 
+window.testWebAlarmSound = function() {
+    initWebAudio();
+    userSilencedThisIncident = false;
+    const testReading = {
+        temperature_c: 48.5,
+        smoke_adc: 580,
+        flame_detected: true,
+        alert: 1,
+        buzzer_active: 1
+    };
+    handleEmergencyAlertPopupAndAudio(true, true, true, true, testReading);
+    addLog("[DEMO-TEST] Wildfire Alarm Triggered: Web Buzzer Siren & Alert Modal Active!", "alert");
+
+    // Automatically stop after 6 seconds if not silenced by user
+    setTimeout(() => {
+        if (!userSilencedThisIncident) {
+            silenceCurrentAlert();
+            addLog("[DEMO-TEST] Test Siren Complete — System Normal.", "info");
+        }
+    }, 6000);
+};
+
 function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r) {
     const modal = $("#emergency-alert-modal");
     const title = $("#alert-modal-title");

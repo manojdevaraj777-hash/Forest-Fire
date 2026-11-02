@@ -290,6 +290,12 @@
                     <span id="text-buzzer">Buzzer: ON</span>
                 </button>
 
+                <!-- Test Alarm Button -->
+                <button id="btn-buzzer-test" onclick="testWebAlarmSound()" title="Test Web Buzzer Alarm & Emergency Alert Message" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/50 text-rose-300 text-xs font-bold transition-all shadow cursor-pointer">
+                    <i data-lucide="play" class="w-3.5 h-3.5 fill-rose-300"></i>
+                    <span>Test Alarm</span>
+                </button>
+
                 <!-- Desktop Live Status Pill (Dynamic Standby / Active Monitoring) -->
                 <div id="sys-status-container" class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-400/50 shadow transition-all">
                     <span class="relative flex h-2 w-2">
@@ -827,7 +833,7 @@
 
     </main>
 
-    <script src="app.js?v=39"></script>
+    <script src="app.js?v=40"></script>
     <script>
         function switchTab(tabId) {
             ['home', 'trends', 'alerts', 'hardware'].forEach(t => {
