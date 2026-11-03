@@ -238,11 +238,20 @@ void loop() {
 
     // 4. Non-blocking WiFi watchdog — reconnect smoothly in background
     static unsigned long lastWifiRetry = 0;
-    if (WiFi.status() != WL_CONNECTED) {
-        if (currentMillis - lastWifiRetry >= 8000) {
+    static bool wasConnected = false;
+    if (WiFi.status() == WL_CONNECTED) {
+        if (!wasConnected) {
+            wasConnected = true;
+            Serial.println();
+            Serial.printf("[WIFI] ★ LINK ESTABLISHED! NodeMCU IP: %s (Signal: %d dBm)\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+        }
+    } else {
+        wasConnected = false;
+        if (currentMillis - lastWifiRetry >= 10000) {
             lastWifiRetry = currentMillis;
-            Serial.printf("[WIFI] Reconnecting to %s...\n", WIFI_SSID);
+            Serial.printf("[WIFI] Retrying connection to '%s' (status code: %d)...\n", WIFI_SSID, WiFi.status());
             WiFi.disconnect();
+            delay(100);
             WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
         }
     }
@@ -254,8 +263,10 @@ void loop() {
 void connectWiFi() {
     if (WiFi.status() == WL_CONNECTED) return;
 
-    Serial.print(F("[WIFI] Connecting to "));
-    Serial.println(WIFI_SSID);
+    Serial.print(F("[WIFI] Connecting to SSID: \""));
+    Serial.print(WIFI_SSID);
+    Serial.println(F("\" ..."));
+
     WiFi.mode(WIFI_STA);
     WiFi.setOutputPower(20.5);          // Max transmission power (20.5 dBm) for strongest signal
     WiFi.setSleepMode(WIFI_NONE_SLEEP); // Disable sleep for instant, solid connection
@@ -264,19 +275,30 @@ void connectWiFi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
-        delay(200);
+    while (WiFi.status() != WL_CONNECTED && millis() - start < 20000) {
+        delay(250);
         Serial.print(F("."));
         yield();
     }
 
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println();
-        Serial.print(F("[WIFI] Connected! IP: "));
-        Serial.println(WiFi.localIP());
-        Serial.printf("[WIFI] Signal Strength (RSSI): %d dBm\n", WiFi.RSSI());
+        Serial.printf("[WIFI] Connected! IP: %s | Signal (RSSI): %d dBm\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
     } else {
-        Serial.println(F("\n[WIFI] Initializing in background... Auto-reconnecting."));
+        Serial.println();
+        Serial.printf("[WIFI] Not connected yet (status: %d).\n", WiFi.status());
+        Serial.println(F("[WIFI-SCAN] Scanning nearby 2.4 GHz Wi-Fi networks in the air..."));
+        int n = WiFi.scanNetworks();
+        if (n == 0) {
+            Serial.println(F("[WIFI-SCAN] No Wi-Fi networks found! Check if phone hotspot is turned ON and set to 2.4 GHz."));
+        } else {
+            Serial.printf("[WIFI-SCAN] Found %d visible networks:\n", n);
+            for (int i = 0; i < n; ++i) {
+                Serial.printf("   [%d] \"%s\" (Signal: %d dBm)\n", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+            }
+            Serial.printf("[WIFI-SCAN] Looking for: \"%s\". If your phone hotspot is not in this list, change hotspot AP Band from 5 GHz to 2.4 GHz!\n", WIFI_SSID);
+        }
+        WiFi.scanDelete();
     }
 }
 
