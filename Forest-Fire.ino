@@ -236,14 +236,19 @@ void loop() {
     // 3. Non-blocking LED blink management
     manageLEDBlink();
 
-    // 4. WiFi watchdog — reconnect if dropped
+    // 4. Non-blocking WiFi watchdog — reconnect smoothly in background
+    static unsigned long lastWifiRetry = 0;
     if (WiFi.status() != WL_CONNECTED) {
-        connectWiFi();
+        if (currentMillis - lastWifiRetry >= 8000) {
+            lastWifiRetry = currentMillis;
+            Serial.println(F("[WIFI] Re-checking Wi-Fi link..."));
+            WiFi.reconnect();
+        }
     }
 }
 
 // ==========================================
-// WIFI CONNECTION
+// WIFI CONNECTION (Ultra-Fast & Stable)
 // ==========================================
 void connectWiFi() {
     if (WiFi.status() == WL_CONNECTED) return;
@@ -251,22 +256,26 @@ void connectWiFi() {
     Serial.print(F("[WIFI] Connecting to "));
     Serial.println(WIFI_SSID);
     WiFi.mode(WIFI_STA);
+    WiFi.setOutputPower(20.5);          // Max transmission power (20.5 dBm) for strongest signal
+    WiFi.setSleepMode(WIFI_NONE_SLEEP); // Disable sleep for instant, solid connection
+    WiFi.setAutoReconnect(true);        // Automatic hardware reconnection
+    WiFi.persistent(true);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 60) {
-        delay(500);
+    unsigned long start = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+        delay(200);
         Serial.print(F("."));
-        attempts++;
+        yield();
     }
 
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println();
         Serial.print(F("[WIFI] Connected! IP: "));
         Serial.println(WiFi.localIP());
+        Serial.printf("[WIFI] Signal Strength (RSSI): %d dBm\n", WiFi.RSSI());
     } else {
-        Serial.println();
-        Serial.println(F("[WIFI] Connection failed. Will retry in loop."));
+        Serial.println(F("\n[WIFI] Initializing in background... Auto-reconnecting."));
     }
 }
 
@@ -514,13 +523,14 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
         if (useTLS) {
             secureClient.setInsecure(); // Skip cert check
             secureClient.setBufferSizes(512, 512); // Reduce SSL buffer from 16KB to 512B -> cuts SSL connection time by 70%!
-            secureClient.setTimeout(2500);
+            secureClient.setTimeout(6000); // 6s timeout for smooth mobile hotspot connectivity
         }
         WiFiClient& client = useTLS ? (WiFiClient&)secureClient : (WiFiClient&)plainClient;
-        http.setTimeout(2500);
+        http.setTimeout(6000);
 
         if (http.begin(client, CLOUD_API_ENDPOINT)) {
             http.addHeader(F("Content-Type"), F("application/json"));
+            http.addHeader(F("Connection"), F("close"));
 
             #ifdef CLOUD_API_KEY
             if (strlen(CLOUD_API_KEY) > 0 && strcmp(CLOUD_API_KEY, "YOUR_API_KEY_HERE") != 0) {
