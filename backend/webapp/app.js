@@ -585,7 +585,7 @@ function handleEmergencyAlertPopupAndAudio(isAlert, isFlame, isSmoke, isTemp, r)
 let isHardwareOnline = false;
 let lastLogState = null;
 
-function setOfflineState(reason = "Awaiting NodeMCU connection") {
+function setOfflineState(reason = "Awaiting NodeMCU connection", latest = null, ageSec = 0) {
     stopWebBuzzer();
     const modal = $("#emergency-alert-modal");
     if (modal) modal.classList.add("hidden");
@@ -593,10 +593,10 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
     if (isHardwareOnline || lastLogState !== "offline") {
         isHardwareOnline = false;
         lastLogState = "offline";
-        addLog(`[STANDBY] ${reason}. Waiting for live telemetry packet on /api/reading...`, 'warn');
+        addLog(`[STANDBY] ${reason}. Displaying last verified telemetry. Waiting for live packet on /api/reading...`, 'warn');
     }
 
-    // 1. Metric values to "--"
+    // 1. Metric values: display latest recorded telemetry if available, otherwise "--"
     const elTemp = $("#val-temp-current");
     const elSmoke = $("#val-smoke");
     const elFlameText = $("#val-flame-text");
@@ -604,31 +604,95 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
     const elWifi = $("#val-wifi");
     const iconWifi = $("#icon-wifi");
 
-    if (elTemp) elTemp.textContent = "--";
-    if (elSmoke) elSmoke.textContent = "--";
-    const elSmokeStatus = $("#val-smoke-status");
-    if (elSmokeStatus) {
-        elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-500/30 text-slate-300 border border-slate-400/30";
-        elSmokeStatus.textContent = "--";
-    }
-    if (elWifi) elWifi.textContent = "--";
-    if (iconWifi) iconWifi.className = "w-3.5 h-3.5 text-slate-400";
-
-    if (elFlameText) {
-        elFlameText.className = "text-3xl sm:text-4xl font-black tracking-tight text-slate-400 drop-shadow";
-        elFlameText.textContent = "--";
-    }
-    if (elFlameDot) {
-        elFlameDot.className = "w-3.5 h-3.5 rounded-full bg-slate-500";
+    if (latest && latest.temperature_c != null) {
+        if (elTemp) elTemp.textContent = latest.temperature_c.toFixed(1);
+    } else {
+        if (elTemp) elTemp.textContent = "--";
     }
 
-    // 2. Metric bars to 0%
+    if (latest && latest.smoke_adc != null) {
+        if (elSmoke) elSmoke.textContent = latest.smoke_adc;
+        const elSmokeStatus = $("#val-smoke-status");
+        if (elSmokeStatus) {
+            if (latest.smoke_adc >= 550) {
+                elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40";
+                elSmokeStatus.textContent = "CRITICAL SMOKE";
+            } else if (latest.smoke_adc >= 480) {
+                elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40";
+                elSmokeStatus.textContent = "ELEVATED";
+            } else {
+                elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+                elSmokeStatus.textContent = "NORMAL / SAFE";
+            }
+        }
+    } else {
+        if (elSmoke) elSmoke.textContent = "--";
+        const elSmokeStatus = $("#val-smoke-status");
+        if (elSmokeStatus) {
+            elSmokeStatus.className = "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-500/30 text-slate-300 border border-slate-400/30";
+            elSmokeStatus.textContent = "--";
+        }
+    }
+
+    if (latest && latest.flame_detected != null) {
+        const isFlame = Boolean(latest.flame_detected);
+        if (elFlameText) {
+            elFlameText.className = isFlame 
+                ? "text-3xl sm:text-4xl font-black tracking-tight text-rose-400 drop-shadow animate-pulse" 
+                : "text-3xl sm:text-4xl font-black tracking-tight text-emerald-300 drop-shadow";
+            elFlameText.textContent = isFlame ? "DETECTED!" : "NORMAL";
+        }
+        if (elFlameDot) {
+            elFlameDot.className = isFlame ? "w-3.5 h-3.5 rounded-full bg-rose-500 animate-ping" : "w-3.5 h-3.5 rounded-full bg-emerald-400";
+        }
+    } else {
+        if (elFlameText) {
+            elFlameText.className = "text-3xl sm:text-4xl font-black tracking-tight text-slate-400 drop-shadow";
+            elFlameText.textContent = "--";
+        }
+        if (elFlameDot) {
+            elFlameDot.className = "w-3.5 h-3.5 rounded-full bg-slate-500";
+        }
+    }
+
+    if (latest && latest.wifi_rssi_db != null) {
+        if (elWifi) elWifi.textContent = `${latest.wifi_rssi_db} dBm`;
+        if (iconWifi) iconWifi.className = "w-3.5 h-3.5 text-amber-400";
+    } else {
+        if (elWifi) elWifi.textContent = "--";
+        if (iconWifi) iconWifi.className = "w-3.5 h-3.5 text-slate-400";
+    }
+
+    // 2. Metric bars: reflect latest values if available
     const barTemp = $("#bar-temp");
     const barSmoke = $("#bar-smoke");
     const barFlame = $("#bar-flame");
-    if (barTemp) barTemp.style.width = "0%";
-    if (barSmoke) barSmoke.style.width = "0%";
-    if (barFlame) {
+    if (latest && latest.temperature_c != null && barTemp) {
+        let pTemp = (latest.temperature_c / 60) * 100;
+        barTemp.style.width = Math.min(100, Math.max(0, pTemp)) + '%';
+    } else if (barTemp) {
+        barTemp.style.width = "0%";
+    }
+
+    if (latest && latest.smoke_adc != null && barSmoke) {
+        let pSmoke = (latest.smoke_adc / 1024) * 100;
+        barSmoke.style.width = Math.min(100, Math.max(0, pSmoke)) + '%';
+        if (latest.smoke_adc >= 550) {
+            barSmoke.className = "metric-fill bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,1)]";
+        } else if (latest.smoke_adc >= 480) {
+            barSmoke.className = "metric-fill bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,1)]";
+        } else {
+            barSmoke.className = "metric-fill bg-gradient-to-r from-purple-400 to-indigo-400 shadow-[0_0_10px_rgba(192,132,252,0.9)]";
+        }
+    } else if (barSmoke) {
+        barSmoke.style.width = "0%";
+    }
+
+    if (latest && barFlame) {
+        const isFlame = Boolean(latest.flame_detected);
+        barFlame.style.width = isFlame ? "100%" : "0%";
+        barFlame.className = isFlame ? "metric-fill bg-rose-500" : "metric-fill bg-emerald-400";
+    } else if (barFlame) {
         barFlame.style.width = "0%";
         barFlame.className = "metric-fill bg-slate-500";
     }
@@ -653,10 +717,10 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
     }
     if (sysText) {
         sysText.className = "text-[11px] font-bold text-amber-200 uppercase tracking-wider";
-        sysText.textContent = "Awaiting Sensors";
+        sysText.textContent = latest ? "Last Synced Telemetry" : "Awaiting Sensors";
     }
 
-    // 4. Alert Badge off
+    // 4. Alert Badge off in standby
     updateAlertBadge(false);
 
     // 5. Trends Tab Link & Stats
@@ -665,18 +729,10 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
     if (trendLinkDot) trendLinkDot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]";
     if (trendLinkText) {
         trendLinkText.className = "text-xs sm:text-sm font-black text-amber-200 font-mono drop-shadow";
-        trendLinkText.textContent = "STANDBY (Awaiting NodeMCU)";
+        trendLinkText.textContent = latest ? "STANDBY (Telemetry Cached)" : "STANDBY (Awaiting NodeMCU)";
     }
 
-    const elPeakTemp = $("#trend-peak-temp");
-    const elFlame = $("#trend-cur-flame");
-    const elAvgSmoke = $("#trend-avg-smoke");
-    if (elPeakTemp) elPeakTemp.textContent = "--";
-    if (elFlame) {
-        elFlame.textContent = "--";
-        elFlame.className = "text-lg sm:text-xl font-black text-white font-mono drop-shadow";
-    }
-    if (elAvgSmoke) elAvgSmoke.textContent = "--";
+    updateTrendStats();
 
     // 6. Hardware tab badges
     const hwDot = $("#hw-verified-dot");
@@ -684,7 +740,7 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
     if (hwDot) hwDot.className = "w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,1)]";
     if (hwText) {
         hwText.className = "text-xs font-mono font-bold text-amber-200";
-        hwText.textContent = "Hardware Standby (Awaiting Link)";
+        hwText.textContent = latest ? "Hardware Verified (Last Sync Preserved)" : "Hardware Standby (Awaiting Link)";
     }
     const bNode = $("#hw-badge-nodemcu");
     const bDht = $("#hw-badge-dht11");
@@ -695,16 +751,16 @@ function setOfflineState(reason = "Awaiting NodeMCU connection") {
         bNode.textContent = "STANDBY";
     }
     if (bDht) {
-        bDht.className = "px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50";
-        bDht.textContent = "STANDBY";
+        bDht.className = latest ? "px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/30 text-emerald-300 border border-emerald-400/50" : "px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50";
+        bDht.textContent = latest ? "ONLINE" : "STANDBY";
     }
     if (bMq2) {
-        bMq2.className = "px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50";
-        bMq2.textContent = "STANDBY";
+        bMq2.className = latest ? "px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/30 text-emerald-300 border border-emerald-400/50" : "px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50";
+        bMq2.textContent = latest ? "ONLINE" : "STANDBY";
     }
     if (bFlame) {
-        bFlame.className = "px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50";
-        bFlame.textContent = "STANDBY";
+        bFlame.className = latest ? "px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/30 text-emerald-300 border border-emerald-400/50" : "px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-500/30 text-slate-300 border border-slate-400/50";
+        bFlame.textContent = latest ? "ONLINE" : "STANDBY";
     }
 }
 
@@ -985,14 +1041,35 @@ function parsePacketTime(isoStr) {
     return new Date(isoStr + 'Z').getTime();
 }
 
+let isChartInitializedWithHistory = false;
+
 async function fetchReadings() {
     try {
         const res = await fetch("/api/readings");
         const data = await res.json();
         
         if (!data || !data.length) {
-            setOfflineState("No sensor telemetry in database");
+            setOfflineState("No sensor telemetry in database", null, 0);
             return;
+        }
+
+        // Pre-populate rolling trend chart with historical records on initial load
+        if (!isChartInitializedWithHistory && bigTempChart && data.length > 0) {
+            const history = data.slice(0, MAX_DATA_POINTS).reverse();
+            tempData = history.map(d => d.temperature_c != null ? d.temperature_c : null);
+            smokeData = history.map(d => d.smoke_adc != null ? d.smoke_adc : null);
+            flameData = history.map(d => d.flame_detected != null ? (d.flame_detected ? 100 : 0) : null);
+            while (tempData.length < MAX_DATA_POINTS) {
+                tempData.unshift(null);
+                smokeData.unshift(null);
+                flameData.unshift(null);
+            }
+            bigTempChart.data.datasets[0].data = tempData;
+            bigTempChart.data.datasets[1].data = smokeData;
+            bigTempChart.data.datasets[2].data = flameData;
+            bigTempChart.update();
+            updateTrendStats();
+            isChartInitializedWithHistory = true;
         }
 
         const serverHeader = res.headers.get("X-Server-Time");
@@ -1002,16 +1079,16 @@ async function fetchReadings() {
         const packetTime = parsePacketTime(latest.received_at);
         const ageSec = (serverTime - packetTime) / 1000;
 
-        // If newest packet is older than 75 seconds or invalid, hardware has disconnected
-        if (isNaN(ageSec) || ageSec > 75) {
+        // If newest packet is older than 120 seconds or invalid, hardware is in standby
+        if (isNaN(ageSec) || ageSec > 120) {
             const ageDisplay = isNaN(ageSec) ? '?' : Math.max(0, Math.round(ageSec));
-            setOfflineState(`Hardware disconnected (Last packet was ${ageDisplay}s ago)`);
+            setOfflineState(`Hardware in standby (Last packet was ${ageDisplay}s ago)`, latest, ageSec);
         } else {
             setOnlineState(latest);
         }
     } catch (e) { 
         console.error("Fetch error:", e);
-        setOfflineState("Backend connection error");
+        setOfflineState("Backend connection error", null, 0);
     }
 }
 

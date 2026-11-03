@@ -241,8 +241,9 @@ void loop() {
     if (WiFi.status() != WL_CONNECTED) {
         if (currentMillis - lastWifiRetry >= 8000) {
             lastWifiRetry = currentMillis;
-            Serial.println(F("[WIFI] Re-checking Wi-Fi link..."));
-            WiFi.reconnect();
+            Serial.printf("[WIFI] Reconnecting to %s...\n", WIFI_SSID);
+            WiFi.disconnect();
+            WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
         }
     }
 }
