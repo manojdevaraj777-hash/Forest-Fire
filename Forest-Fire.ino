@@ -523,7 +523,7 @@ bool sendCloudPayload(float temp, float humidity, float heatIndex,
         // Plain HTTP for local endpoints, TLS for https:// endpoints
         if (useTLS) {
             secureClient.setInsecure(); // Skip cert check
-            secureClient.setBufferSizes(512, 512); // Reduce SSL buffer from 16KB to 512B -> cuts SSL connection time by 70%!
+            secureClient.setBufferSizes(4096, 512); // 4KB RX buffer for Render TLS certificates, 512B TX for fast JSON
             secureClient.setTimeout(6000); // 6s timeout for smooth mobile hotspot connectivity
         }
         WiFiClient& client = useTLS ? (WiFiClient&)secureClient : (WiFiClient&)plainClient;
