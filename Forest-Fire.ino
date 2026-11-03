@@ -100,7 +100,7 @@ void setup() {
     system_update_cpu_freq(160);
 
     // Pin Modes
-    pinMode(FLAME_PIN, INPUT);
+    pinMode(FLAME_PIN, INPUT_PULLUP); // Internal pullup prevents floating false alarms
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW);

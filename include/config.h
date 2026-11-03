@@ -23,8 +23,8 @@
 // ==========================================
 #define TEMP_THRESHOLD_HIGH_C       45.0f   // Alert if Temperature > 45°C
 #define HUMIDITY_THRESHOLD_LOW      20.0f   // Alert if Humidity < 20%
-#define SMOKE_THRESHOLD_ADC         300     // Critical Alert if MQ-2 raw ADC >= 300 (Ultra-Fast Smoke Detection)
-#define SMOKE_ELEVATED_ADC          220     // Advisory warning if MQ-2 raw ADC >= 220
+#define SMOKE_THRESHOLD_ADC         550     // Critical Alert if MQ-2 raw ADC >= 550 (Calibrated for your room)
+#define SMOKE_ELEVATED_ADC          480     // Advisory warning if MQ-2 raw ADC >= 480
 #define FLAME_DETECTED_STATE        LOW     // Flame sensor is Active LOW
 
 // ==========================================

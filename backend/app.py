@@ -61,7 +61,7 @@ def get_action_plan(sensor_data):
     smoke = sensor_data.get("smoke_adc") or 0
     flame = bool(sensor_data.get("flame_detected"))
     
-    if flame and smoke >= 300:
+    if flame and smoke >= 550:
         status = "CRITICAL EMERGENCY: ACTIVE WILDFIRE WITH HEAVY SMOKE"
         threat_level = "TIER 1 — MAXIMUM EMERGENCY"
         solution_title = "IMMEDIATE EVACUATION & ACTIVE FIRE SUPPRESSION PROTOCOL"
@@ -86,11 +86,11 @@ def get_action_plan(sensor_data):
             "💧 CLEAR FUEL BREAK: Remove dry twigs, grass, and leaf litter in a 10m perimeter to starve fuel.",
             "📹 MONITOR SENSORS: Continuous sampling of temperature & smoke spikes."
         ]
-    elif smoke >= 300:
-        status = "HIGH ALERT: COMBUSTION SMOKE DETECTED (MQ-2 >= 300 ADC)"
+    elif smoke >= 550:
+        status = "HIGH ALERT: COMBUSTION SMOKE DETECTED (MQ-2 >= 550 ADC)"
         threat_level = "TIER 2 — SMOLDERING / GAS HAZARD"
         solution_title = "SMOLDERING INVESTIGATION & CONTAINMENT PROTOCOL"
-        explanation = f"MQ-2 sensor detected critical combustion density ({smoke} ADC >= 300). High risk of concealed root fire or smoldering timber."
+        explanation = f"MQ-2 sensor detected critical combustion density ({smoke} ADC >= 550). High risk of concealed root fire or smoldering timber."
         actions = [
             "🔍 DISPATCH SCOUT TEAM: Inspect sector for smoldering tree roots, agricultural burn, or campfire embers.",
             "💧 WET LINE DEPLOYMENT: Spray pressurized water along perimeter to douse subsurface embers.",
@@ -144,7 +144,7 @@ def get_action_plan(sensor_data):
         "explanation": explanation,
         "actions": actions,
         "formatted": formatted,
-        "is_emergency": bool(flame or smoke >= 300 or temp > 45)
+        "is_emergency": bool(flame or smoke >= 550 or temp > 45)
     }
 
 
