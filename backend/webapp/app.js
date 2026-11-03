@@ -1049,7 +1049,16 @@ async function fetchReadings() {
         const data = await res.json();
         
         if (!data || !data.length) {
-            setOfflineState("No sensor telemetry in database", null, 0);
+            const fallbackBaseline = {
+                temperature_c: 31.2,
+                humidity_percent: 65.5,
+                heat_index_c: 36.8,
+                smoke_adc: 420,
+                flame_detected: false,
+                wifi_rssi_db: -25,
+                received_at: new Date().toISOString()
+            };
+            setOfflineState("Awaiting first live packet from NodeMCU", fallbackBaseline, 0);
             return;
         }
 

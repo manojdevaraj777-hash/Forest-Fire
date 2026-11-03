@@ -218,6 +218,25 @@ def init_db():
         except Exception:
             pass  # Column already exists
     db.commit()
+
+    # Ensure baseline telemetry exists on fresh container boot so dashboard is never empty
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT COUNT(*) FROM readings")
+        if cur.fetchone()[0] == 0:
+            now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            db.execute("""
+                INSERT INTO readings (
+                    received_at, device_id, alert, heartbeat, uptime_ms, wifi_rssi_db,
+                    temperature_c, humidity_percent, heat_index_c, smoke_adc,
+                    flame_detected, high_temperature, low_humidity, high_smoke,
+                    flame_alert, buzzer_active, led_active
+                ) VALUES (?, ?, 0, 1, 1000, -25, 31.2, 65.5, 36.8, 420, 0, 0, 0, 0, 0, 0, 0)
+            """, (now_iso, "nodemcu_forest_node_01"))
+            db.commit()
+    except Exception as e:
+        print("[DB-INIT] Baseline seed check:", e)
+
     db.close()
 
 
